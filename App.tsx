@@ -6,18 +6,16 @@ import {
   Dimensions,
   PanResponder,
   TouchableOpacity,
-  LayoutChangeEvent,
   Image,
+  LayoutChangeEvent,
 } from 'react-native';
-import Svg, { Path, Circle, Polyline } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import * as pathUtils from 'svg-path-properties';
 
 const screenWidth = Dimensions.get('window').width;
 const canvasWidth = screenWidth - 40;
 
-// Keep original "2" path unchanged
 const numberPath = "M150 80 L250 80 Q280 80 280 110 L280 140 L150 200 L150 230 L280 230";
-
 const startPoint = { x: 150, y: 80 };
 const endPoint = { x: 280, y: 230 };
 const allowedOffset = 30;
@@ -26,6 +24,8 @@ export default function App() {
   const [line, setLine] = useState('');
   const [pacmanPos, setPacmanPos] = useState(startPoint);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
+
   const pathRef = useRef('');
   const completed = useRef(false);
   const properties = new pathUtils.svgPathProperties(numberPath);
@@ -40,20 +40,29 @@ export default function App() {
   };
 
   const isAtEnd = (x: number, y: number): boolean => {
-
     return Math.hypot(endPoint.x - x, endPoint.y - y) < allowedOffset;
   };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+
+      onPanResponderGrant: () => {
+        pathRef.current = '';
+      },
+
       onPanResponderMove: (_, gesture) => {
-        const x = gesture.moveX;
-        const y = gesture.moveY;
+        const x = gesture.moveX - containerOffset.x;
+        const y = gesture.moveY - containerOffset.y;
 
         if (isNearPath(x, y)) {
-          pathRef.current += `L ${x} ${y} `;
-          setLine(`M ${gesture.x0} ${gesture.y0} ${pathRef.current}`);
+          if (!pathRef.current) {
+            pathRef.current = `M ${startPoint.x} ${startPoint.y} L ${x} ${y} `;
+          } else {
+            pathRef.current += `L ${x} ${y} `;
+          }
+
+          setLine(pathRef.current);
           setPacmanPos({ x, y });
 
           if (isAtEnd(x, y) && !completed.current) {
@@ -62,6 +71,7 @@ export default function App() {
           }
         }
       },
+
       onPanResponderRelease: () => {
         pathRef.current = '';
       },
@@ -75,30 +85,50 @@ export default function App() {
     completed.current = false;
   };
 
+  const onContainerLayout = (event: LayoutChangeEvent) => {
+    const { x, y } = event.nativeEvent.layout;
+    setContainerOffset({ x, y });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Trace Number 2</Text>
-      <Text style={styles.instructions}>Drag Pac-Man along the dotted path to trace the number</Text>
+      <Text style={styles.instructions}>
+        Drag Pac-Man along the dotted path to trace the number
+      </Text>
 
-      <View style={styles.traceBox} {...panResponder.panHandlers}>
+      <View
+        style={styles.traceBox}
+        {...panResponder.panHandlers}
+        onLayout={onContainerLayout}
+      >
         <Svg height="300" width={canvasWidth}>
-          <Path d={numberPath} stroke="#ccc" strokeWidth="12" strokeDasharray="10,10" fill="none" />
+          <Path
+            d={numberPath}
+            stroke="#ccc"
+            strokeWidth="12"
+            strokeDasharray="10,10"
+            fill="none"
+          />
 
-          {/* Start & End */}
           <Circle cx={startPoint.x} cy={startPoint.y} r={10} fill="green" />
           <Circle cx={endPoint.x} cy={endPoint.y} r={10} fill="red" />
 
-          {/* Traced Path */}
           {line && <Path d={line} stroke="blue" strokeWidth={6} fill="none" />}
         </Svg>
 
         <Image
           source={require('./assets/1.png')}
-          style={[styles.pacmanImage, { top: pacmanPos.y - 25, left: pacmanPos.x - 25 }]}
+          style={[
+            styles.pacmanImage,
+            { top: pacmanPos.y - 25, left: pacmanPos.x - 25 },
+          ]}
         />
       </View>
 
-      {isCompleted && <Text style={styles.success}>🎉 Great Job! This is number 2! 🎉</Text>}
+      {isCompleted && (
+        <Text style={styles.success}>🎉 Great Job! This is number 2! 🎉</Text>
+      )}
 
       <TouchableOpacity onPress={resetGame} style={styles.button}>
         <Text style={styles.buttonText}>Try Again</Text>
