@@ -11,6 +11,7 @@ import {
   Animated,
   ImageBackground,
 } from 'react-native';
+
 import Svg, { Path, Circle } from 'react-native-svg';
 import * as pathUtils from 'svg-path-properties';
 
@@ -33,7 +34,7 @@ export default function App() {
   const pathRef = useRef('');
   const completed = useRef(false);
   const containerRef = useRef<View>(null);
-  const isTracingRef = useRef(false); // Use ref for immediate updates
+  const isTracingRef = useRef(false); 
   const properties = new pathUtils.svgPathProperties(numberPath);
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -93,7 +94,7 @@ export default function App() {
       onMoveShouldSetPanResponder: () => true,
 
       onPanResponderGrant: (evt, gesture) => {
-        // Calculate position relative to the SVG container
+        
         const x = evt.nativeEvent.locationX;
         const y = evt.nativeEvent.locationY;
         
@@ -104,7 +105,7 @@ export default function App() {
         // Allow tracing if near start point or already tracing
         if (isNearStartPoint(x, y) || isTracingRef.current) {
           setIsTracing(true);
-          isTracingRef.current = true; // Set ref immediately
+          isTracingRef.current = true; 
           setIsAnimating(true);
           pathRef.current = `M ${startPoint.x} ${startPoint.y}`;
           console.log('Started tracing!');
@@ -117,15 +118,13 @@ export default function App() {
           return;
         }
 
-        // Use locationX/Y for coordinates relative to the container
         const x = evt.nativeEvent.locationX;
         const y = evt.nativeEvent.locationY;
         
         console.log('Move to:', x, y, 'Near path?', isNearPath(x, y));
 
-        // Always move Pac-Man when tracing, even if not exactly on path
+        // Pacman moving code, moves even after not on path
         if (isTracingRef.current) {
-          // Add to path if near the guide path
           if (isNearPath(x, y)) {
             pathRef.current += ` L ${x} ${y}`;
             setLine(pathRef.current);
@@ -139,10 +138,8 @@ export default function App() {
             useNativeDriver: true,
           }).start();
 
-          // Always update Pac-Man position
           setPacmanPos({ x, y });
 
-          // Check if completed
           if (isAtEnd(x, y) && !completed.current) {
             completed.current = true;
             setIsCompleted(true);
@@ -158,7 +155,7 @@ export default function App() {
         console.log('Released');
         setIsAnimating(false);
         setIsTracing(false);
-        isTracingRef.current = false; // Reset ref
+        isTracingRef.current = false;
 
         Animated.timing(scaleAnim, {
           toValue: 1,
@@ -175,7 +172,7 @@ export default function App() {
     setIsCompleted(false);
     setIsAnimating(false);
     setIsTracing(false);
-    isTracingRef.current = false; // Reset ref
+    isTracingRef.current = false; 
     completed.current = false;
     pathRef.current = '';
     rotationAnim.setValue(0);
@@ -215,11 +212,11 @@ export default function App() {
             fill="none"
           />
 
-          {/* Start and end points */}
+        
           <Circle cx={startPoint.x} cy={startPoint.y} r={15} fill="green" />
           <Circle cx={endPoint.x} cy={endPoint.y} r={15} fill="red" />
 
-          {/* User's traced line */}
+          
           {line && (
             <Path 
               d={line} 
@@ -232,7 +229,7 @@ export default function App() {
           )}
         </Svg>
 
-        {/* Pac-Man character */}
+        
         <Animated.View
           style={[
             styles.pacmanContainer,
