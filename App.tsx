@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Image,
   LayoutChangeEvent,
+  Animated,
+  ImageBackground,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import * as pathUtils from 'svg-path-properties';
@@ -18,17 +20,55 @@ const canvasWidth = screenWidth - 40;
 const numberPath = "M150 80 L250 80 Q280 80 280 110 L280 140 L150 200 L150 230 L280 230";
 const startPoint = { x: 150, y: 80 };
 const endPoint = { x: 280, y: 230 };
-const allowedOffset = 30;
+const allowedOffset = 40; // Increased tolerance for easier tracing
 
 export default function App() {
   const [line, setLine] = useState('');
   const [pacmanPos, setPacmanPos] = useState(startPoint);
   const [isCompleted, setIsCompleted] = useState(false);
   const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isTracing, setIsTracing] = useState(false);
 
   const pathRef = useRef('');
   const completed = useRef(false);
+  const containerRef = useRef<View>(null);
+  const isTracingRef = useRef(false); // Use ref for immediate updates
   const properties = new pathUtils.svgPathProperties(numberPath);
+  const rotationAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Pac-Man mouth animation
+  useEffect(() => {
+    if (isAnimating) {
+      const animate = () => {
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 0.8,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          if (isAnimating) {
+            animate();
+          }
+        });
+      };
+      animate();
+    }
+  }, [isAnimating, scaleAnim]);
+
+  const calculateRotation = (currentPos: { x: number; y: number }, newPos: { x: number; y: number }) => {
+    const dx = newPos.x - currentPos.x;
+    const dy = newPos.y - currentPos.y;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    return angle;
+  };
 
   const isNearPath = (x: number, y: number): boolean => {
     const length = properties.getTotalLength();
@@ -39,6 +79,10 @@ export default function App() {
     return false;
   };
 
+  const isNearStartPoint = (x: number, y: number): boolean => {
+    return Math.hypot(startPoint.x - x, startPoint.y - y) < allowedOffset;
+  };
+
   const isAtEnd = (x: number, y: number): boolean => {
     return Math.hypot(endPoint.x - x, endPoint.y - y) < allowedOffset;
   };
@@ -46,34 +90,81 @@ export default function App() {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
 
-      onPanResponderGrant: () => {
-        pathRef.current = '';
+      onPanResponderGrant: (evt, gesture) => {
+        // Calculate position relative to the SVG container
+        const x = evt.nativeEvent.locationX;
+        const y = evt.nativeEvent.locationY;
+        
+        console.log('Touch start at:', x, y);
+        console.log('Start point:', startPoint);
+        console.log('Near start?', isNearStartPoint(x, y));
+        
+        // Allow tracing if near start point or already tracing
+        if (isNearStartPoint(x, y) || isTracingRef.current) {
+          setIsTracing(true);
+          isTracingRef.current = true; // Set ref immediately
+          setIsAnimating(true);
+          pathRef.current = `M ${startPoint.x} ${startPoint.y}`;
+          console.log('Started tracing!');
+        }
       },
 
-      onPanResponderMove: (_, gesture) => {
-        const x = gesture.moveX - containerOffset.x;
-        const y = gesture.moveY - containerOffset.y;
+      onPanResponderMove: (evt, gesture) => {
+        if (!isTracingRef.current) {
+          console.log('Not tracing, skipping move');
+          return;
+        }
 
-        if (isNearPath(x, y)) {
-          if (!pathRef.current) {
-            pathRef.current = `M ${startPoint.x} ${startPoint.y} L ${x} ${y} `;
-          } else {
-            pathRef.current += `L ${x} ${y} `;
+        // Use locationX/Y for coordinates relative to the container
+        const x = evt.nativeEvent.locationX;
+        const y = evt.nativeEvent.locationY;
+        
+        console.log('Move to:', x, y, 'Near path?', isNearPath(x, y));
+
+        // Always move Pac-Man when tracing, even if not exactly on path
+        if (isTracingRef.current) {
+          // Add to path if near the guide path
+          if (isNearPath(x, y)) {
+            pathRef.current += ` L ${x} ${y}`;
+            setLine(pathRef.current);
           }
 
-          setLine(pathRef.current);
+          // Calculate rotation based on movement direction
+          const newRotation = calculateRotation(pacmanPos, { x, y });
+          Animated.timing(rotationAnim, {
+            toValue: newRotation,
+            duration: 50,
+            useNativeDriver: true,
+          }).start();
+
+          // Always update Pac-Man position
           setPacmanPos({ x, y });
 
+          // Check if completed
           if (isAtEnd(x, y) && !completed.current) {
             completed.current = true;
             setIsCompleted(true);
+            setIsAnimating(false);
+            setIsTracing(false);
+            isTracingRef.current = false;
+            console.log('Completed!');
           }
         }
       },
 
       onPanResponderRelease: () => {
-        pathRef.current = '';
+        console.log('Released');
+        setIsAnimating(false);
+        setIsTracing(false);
+        isTracingRef.current = false; // Reset ref
+
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
       },
     })
   ).current;
@@ -82,27 +173,40 @@ export default function App() {
     setPacmanPos(startPoint);
     setLine('');
     setIsCompleted(false);
+    setIsAnimating(false);
+    setIsTracing(false);
+    isTracingRef.current = false; // Reset ref
     completed.current = false;
+    pathRef.current = '';
+    rotationAnim.setValue(0);
+    scaleAnim.setValue(1);
   };
 
   const onContainerLayout = (event: LayoutChangeEvent) => {
     const { x, y } = event.nativeEvent.layout;
     setContainerOffset({ x, y });
+    console.log('Container layout:', { x, y });
   };
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require('./assets/bg1.png')}
+      style={styles.container}
+      resizeMode="cover"
+    >
       <Text style={styles.title}>Trace Number 2</Text>
       <Text style={styles.instructions}>
-        Drag Pac-Man along the dotted path to trace the number
+        Start from the green dot and drag Pac-Man along the dotted path
       </Text>
 
       <View
+        ref={containerRef}
         style={styles.traceBox}
         {...panResponder.panHandlers}
         onLayout={onContainerLayout}
       >
         <Svg height="300" width={canvasWidth}>
+          {/* Guide path */}
           <Path
             d={numberPath}
             stroke="#ccc"
@@ -111,66 +215,106 @@ export default function App() {
             fill="none"
           />
 
-          <Circle cx={startPoint.x} cy={startPoint.y} r={10} fill="green" />
-          <Circle cx={endPoint.x} cy={endPoint.y} r={10} fill="red" />
+          {/* Start and end points */}
+          <Circle cx={startPoint.x} cy={startPoint.y} r={15} fill="green" />
+          <Circle cx={endPoint.x} cy={endPoint.y} r={15} fill="red" />
 
-          {line && <Path d={line} stroke="blue" strokeWidth={6} fill="none" />}
+          {/* User's traced line */}
+          {line && (
+            <Path 
+              d={line} 
+              stroke="blue" 
+              strokeWidth={8} 
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
         </Svg>
 
-        <Image
-          source={require('./assets/1.png')}
+        {/* Pac-Man character */}
+        <Animated.View
           style={[
-            styles.pacmanImage,
-            { top: pacmanPos.y - 25, left: pacmanPos.x - 25 },
+            styles.pacmanContainer,
+            {
+              top: pacmanPos.y - 25,
+              left: pacmanPos.x - 25,
+              transform: [
+                {
+                  rotate: rotationAnim.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+                { scale: scaleAnim },
+              ],
+            },
           ]}
-        />
+        >
+          <Image
+            source={require('./assets/1.png')}
+            style={styles.pacmanImage}
+          />
+        </Animated.View>
       </View>
 
       {isCompleted && (
-        <Text style={styles.success}>🎉 Great Job! This is number 2! 🎉</Text>
+        <Text style={styles.success}>🎉 Great Job! You traced number 2! 🎉</Text>
       )}
 
       <TouchableOpacity onPress={resetGame} style={styles.button}>
         <Text style={styles.buttonText}>Try Again</Text>
       </TouchableOpacity>
-    </View>
+      
+      {/* Debug info */}
+      <Text style={styles.debugText}>
+        Pac-Man at: ({Math.round(pacmanPos.x)}, {Math.round(pacmanPos.y)})
+        {isTracing && " - Tracing!"}
+      </Text>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eaf0fb',
     alignItems: 'center',
     paddingTop: 60,
   },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#000000',
   },
   instructions: {
     fontSize: 14,
     marginTop: 6,
     marginBottom: 16,
-    color: '#555',
+    color: '#000000',
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
   traceBox: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     padding: 20,
     width: canvasWidth,
     height: 320,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 120,
+    marginLeft: -40,
     elevation: 4,
   },
-  pacmanImage: {
+  pacmanContainer: {
     position: 'absolute',
     width: 50,
     height: 50,
     zIndex: 10,
+  },
+  pacmanImage: {
+    width: 50,
+    height: 50,
   },
   button: {
     marginTop: 30,
@@ -187,7 +331,16 @@ const styles = StyleSheet.create({
   success: {
     marginTop: 20,
     fontSize: 16,
-    color: '#2e7d32',
+    color: '#fff',
     fontWeight: 'bold',
+    backgroundColor: 'rgba(46,125,50,0.8)',
+    padding: 10,
+    borderRadius: 10,
   },
-});
+  debugText: {
+    marginTop: 10,
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+}); 
