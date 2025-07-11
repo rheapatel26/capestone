@@ -187,7 +187,7 @@ export default function App() {
 
   return (
     <ImageBackground
-      source={require('./assets/bg1.png')}
+      source={require('./assets/bg1.gif')}
       style={styles.container}
       resizeMode="cover"
     >
@@ -279,6 +279,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   title: {
+    marginTop: 120,
     fontSize: 26,
     fontWeight: 'bold',
     color: '#000000',
@@ -292,15 +293,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   traceBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.69)',
     borderRadius: 20,
     padding: 20,
     width: canvasWidth,
-    height: 320,
+    height: canvasWidth,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 120,
-    marginLeft: -40,
+    marginTop: 20,
+    marginLeft: -10,
     elevation: 4,
   },
   pacmanContainer: {
