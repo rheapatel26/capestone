@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+
 import {
   View,
   Text,
@@ -14,7 +15,6 @@ import {
 
 import Svg, { Path, Circle } from 'react-native-svg';
 import * as pathUtils from 'svg-path-properties';
-
 const screenWidth = Dimensions.get('window').width;
 const canvasWidth = screenWidth - 40;
 
@@ -63,6 +63,14 @@ export default function App() {
   //     animate();
   //   }
   // }, [isAnimating, scaleAnim]);
+
+  const pacmanImage = useMemo(() => (
+  <Image
+    source={require('./assets/1.gif')}
+    style={styles.pacmanImage}
+  />
+), []);
+
 
   const calculateRotation = (currentPos: { x: number; y: number }, newPos: { x: number; y: number }) => {
     const dx = newPos.x - currentPos.x;
@@ -207,7 +215,7 @@ export default function App() {
           <Path
             d={numberPath}
             stroke="#ccc"
-            strokeWidth="12"
+            strokeWidth="8"
             strokeDasharray="10,10"
             fill="none"
           />
@@ -220,7 +228,7 @@ export default function App() {
           {line && (
             <Path 
               d={line} 
-              stroke="blue" 
+              stroke="orange" 
               strokeWidth={8} 
               fill="none"
               strokeLinecap="round"
@@ -230,29 +238,27 @@ export default function App() {
         </Svg>
 
         
-        <Animated.View
-          style={[
-            styles.pacmanContainer,
-            {
-              top: pacmanPos.y - 25,
-              left: pacmanPos.x - 25,
-              transform: [
-                {
-                  rotate: rotationAnim.interpolate({
-                    inputRange: [0, 360],
-                    outputRange: ['0deg', '360deg'],
-                  }),
-                },
-                { scale: scaleAnim },
-              ],
-            },
-          ]}
-        >
-          <Image
-            source={require('./assets/1.gif')}
-            style={styles.pacmanImage}
-          />
-        </Animated.View>
+       <Animated.View
+  style={[
+    styles.pacmanContainer,
+    {
+      top: pacmanPos.y - 25,
+      left: pacmanPos.x - 25,
+      transform: [
+        {
+          rotate: rotationAnim.interpolate({
+            inputRange: [0, 360],
+            outputRange: ['0deg', '360deg'],
+          }),
+        },
+        { scale: scaleAnim },
+      ],
+    },
+  ]}
+>
+  {pacmanImage}
+</Animated.View>
+
       </View>
 
       {isCompleted && (
