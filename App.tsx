@@ -13,7 +13,7 @@ import {
   ImageBackground,
 } from 'react-native';
 
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Defs, Mask, Rect } from 'react-native-svg';
 import * as pathUtils from 'svg-path-properties';
 const screenWidth = Dimensions.get('window').width;
 const canvasWidth = screenWidth - 40;
@@ -23,6 +23,21 @@ const startPoint = { x: 150, y: 80 };
 const endPoint = { x: 280, y: 230 };
 const allowedOffset = 40; // Increased tolerance for easier tracing
 
+// Generate apple positions along the path
+const generateApplePositions = () => {
+  const properties = new pathUtils.svgPathProperties(numberPath);
+  const totalLength = properties.getTotalLength();
+  const appleSpacing = 20; // Distance between apples
+  const positions = [];
+  
+  for (let i = 0; i <= totalLength; i += appleSpacing) {
+    const point = properties.getPointAtLength(i);
+    positions.push({ x: point.x, y: point.y, id: i });
+  }
+  
+  return positions;
+};
+
 export default function App() {
   const [line, setLine] = useState('');
   const [pacmanPos, setPacmanPos] = useState(startPoint);
@@ -30,6 +45,9 @@ export default function App() {
   const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
   const [isTracing, setIsTracing] = useState(false);
+  const [tracedCircles, setTracedCircles] = useState<Array<{x: number, y: number, id: number}>>([]); // New state for traced positions
+  const [applePositions] = useState(() => generateApplePositions()); // Generate apple positions once
+  const [eatenApples, setEatenApples] = useState<Set<number>>(new Set()); // Track eaten apples
 
   const pathRef = useRef('');
   const completed = useRef(false);
@@ -39,38 +57,12 @@ export default function App() {
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  // Pac-Man mouth animation
-  // useEffect(() => {
-  //   if (isAnimating) {
-  //     const animate = () => {
-  //       Animated.sequence([
-  //         Animated.timing(scaleAnim, {
-  //           toValue: 0.8,
-  //           duration: 200,
-  //           useNativeDriver: true,
-  //         }),
-  //         Animated.timing(scaleAnim, {
-  //           toValue: 1,
-  //           duration: 200,
-  //           useNativeDriver: true,
-  //         }),
-  //       ]).start(() => {
-  //         if (isAnimating) {
-  //           animate();
-  //         }
-  //       });
-  //     };
-  //     animate();
-  //   }
-  // }, [isAnimating, scaleAnim]);
-
   const pacmanImage = useMemo(() => (
   <Image
     source={require('./assets/1.gif')}
     style={styles.pacmanImage}
   />
 ), []);
-
 
   const calculateRotation = (currentPos: { x: number; y: number }, newPos: { x: number; y: number }) => {
     const dx = newPos.x - currentPos.x;
@@ -136,6 +128,19 @@ export default function App() {
           if (isNearPath(x, y)) {
             pathRef.current += ` L ${x} ${y}`;
             setLine(pathRef.current);
+            
+            // Check if Pac-Man is near any apples and "eat" them
+            applePositions.forEach(apple => {
+              if (Math.hypot(apple.x - x, apple.y - y) < 25) { // Within eating distance
+                setEatenApples(prev => new Set([...prev, apple.id]));
+              }
+            });
+            
+            // Add circles along the traced path to create mask effect
+            setTracedCircles(prev => [
+              ...prev,
+              { x, y, id: Date.now() + Math.random() }
+            ]);
           }
 
           // Calculate rotation based on movement direction
@@ -183,6 +188,8 @@ export default function App() {
     isTracingRef.current = false; 
     completed.current = false;
     pathRef.current = '';
+    setTracedCircles([]); // Reset traced circles
+    setEatenApples(new Set()); // Reset eaten apples
     rotationAnim.setValue(0);
     scaleAnim.setValue(1);
   };
@@ -211,53 +218,61 @@ export default function App() {
         onLayout={onContainerLayout}
       >
         <Svg height="300" width={canvasWidth}>
-          {/* Guide path */}
-          <Path
-            d={numberPath}
-            stroke="#ccc"
-            strokeWidth="8"
-            strokeDasharray="10,10"
-            fill="none"
-          />
-
-        
           <Circle cx={startPoint.x} cy={startPoint.y} r={15} fill="green" />
           <Circle cx={endPoint.x} cy={endPoint.y} r={15} fill="red" />
 
-          
+          {/* Optional: Show the traced path in a different color */}
           {line && (
             <Path 
               d={line} 
               stroke="orange" 
-              strokeWidth={8} 
+              strokeWidth={10} 
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
+              opacity={0.7}
             />
           )}
         </Svg>
 
-        
-       <Animated.View
-  style={[
-    styles.pacmanContainer,
-    {
-      top: pacmanPos.y - 25,
-      left: pacmanPos.x - 25,
-      transform: [
-        {
-          rotate: rotationAnim.interpolate({
-            inputRange: [0, 360],
-            outputRange: ['0deg', '360deg'],
-          }),
-        },
-        { scale: scaleAnim },
-      ],
-    },
-  ]}
->
-  {pacmanImage}
-</Animated.View>
+        {/* Render apples along the path */}
+        {applePositions.map(apple => (
+          !eatenApples.has(apple.id) && (
+            <Image
+              key={apple.id}
+              source={require('./assets/apple.png')}
+              style={[
+                styles.appleImage,
+                {
+                  position: 'absolute',
+                  left: apple.x - 10, // Center the apple (assuming 20px width)
+                  top: apple.y - 10,  // Center the apple (assuming 20px height)
+                }
+              ]}
+            />
+          )
+        ))}
+
+        <Animated.View
+          style={[
+            styles.pacmanContainer,
+            {
+              top: pacmanPos.y - 25,
+              left: pacmanPos.x - 25,
+              transform: [
+                {
+                  rotate: rotationAnim.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+                { scale: scaleAnim },
+              ],
+            },
+          ]}
+        >
+          {pacmanImage}
+        </Animated.View>
 
       </View>
 
@@ -312,8 +327,8 @@ const styles = StyleSheet.create({
   },
   pacmanContainer: {
     position: 'absolute',
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     zIndex: 10,
   },
   pacmanImage: {
@@ -347,4 +362,9 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-}); 
+  appleImage: {
+    width: 20,
+    height: 20,
+    zIndex: 5,
+  },
+});
