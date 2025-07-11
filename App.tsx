@@ -363,8 +363,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   appleImage: {
-    width: 20,
-    height: 20,
+    width: 17,
+    height: 17,
     zIndex: 5,
   },
 });
