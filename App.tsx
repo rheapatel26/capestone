@@ -40,29 +40,29 @@ export default function App() {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Pac-Man mouth animation
-  useEffect(() => {
-    if (isAnimating) {
-      const animate = () => {
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 0.8,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          if (isAnimating) {
-            animate();
-          }
-        });
-      };
-      animate();
-    }
-  }, [isAnimating, scaleAnim]);
+  // useEffect(() => {
+  //   if (isAnimating) {
+  //     const animate = () => {
+  //       Animated.sequence([
+  //         Animated.timing(scaleAnim, {
+  //           toValue: 0.8,
+  //           duration: 200,
+  //           useNativeDriver: true,
+  //         }),
+  //         Animated.timing(scaleAnim, {
+  //           toValue: 1,
+  //           duration: 200,
+  //           useNativeDriver: true,
+  //         }),
+  //       ]).start(() => {
+  //         if (isAnimating) {
+  //           animate();
+  //         }
+  //       });
+  //     };
+  //     animate();
+  //   }
+  // }, [isAnimating, scaleAnim]);
 
   const calculateRotation = (currentPos: { x: number; y: number }, newPos: { x: number; y: number }) => {
     const dx = newPos.x - currentPos.x;
@@ -249,7 +249,7 @@ export default function App() {
           ]}
         >
           <Image
-            source={require('./assets/1.png')}
+            source={require('./assets/1.gif')}
             style={styles.pacmanImage}
           />
         </Animated.View>
