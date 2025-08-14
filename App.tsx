@@ -44,7 +44,7 @@ function MainTabs() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ size }) => (
-            <Image source={require('./assets/icons/icon_clock.png')} style={{ width: size, height: size }} />
+            <Image source={require('./assets/icons/icon_user.png')} style={{ width: size, height: size }} />
           ),
         }}
       />
@@ -53,7 +53,7 @@ function MainTabs() {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ size }) => (
-            <Image source={require('./assets/icons/icon_math.png')} style={{ width: size, height: size }} />
+            <Image source={require('./assets/icons/icon_settings.png')} style={{ width: size, height: size }} />
           ),
         }}
       />
