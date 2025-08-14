@@ -35,7 +35,7 @@ function MainTabs() {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ size }) => (
-            <Image source={require('./assets/icons/icon_digit.png')} style={{ width: size, height: size }} />
+            <Image source={require('./assets/icons/icon_home.png')} style={{ width: size, height: size }} />
           ),
         }}
       />
