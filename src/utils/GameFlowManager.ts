@@ -27,7 +27,7 @@ export class GameFlowManager {
 
   updateHints() {
     // Unlock hints progressively after thresholds
-    if (this.incorrectAttempts === 5 && this.hintLevel < 1) {
+    if (this.incorrectAttempts === 3 && this.hintLevel < 1) {
       this.hintLevel = 1;
     } else if (this.incorrectAttempts === 8 && this.hintLevel < 2) {
       this.hintLevel = 2;

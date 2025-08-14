@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
+import { Image as ExpoImage } from 'expo-image'; // For GIF playback
 import { GameFlowManager } from '../utils/GameFlowManager';
 
 const { width, height } = Dimensions.get('window');
@@ -60,8 +61,15 @@ export default function BubbleCountingGame() {
   }
 
   function popBubble(id: number) {
-    setBubbles(prev => prev.map(b => b.id === id ? { ...b, popped: true, highlighted: false } : b));
-    setPoppedCount(prev => prev + 1);
+    setBubbles(prev =>
+      prev.map(b => {
+        if (b.id === id && !b.popped) {
+          setPoppedCount(prevCount => prevCount + 1);
+          return { ...b, popped: true, highlighted: false };
+        }
+        return b;
+      })
+    );
   }
 
   function checkAnswer() {
@@ -115,7 +123,6 @@ export default function BubbleCountingGame() {
   }
 
   function playSolutionAnimation() {
-    // Mark as dependent
     managerRef.hintLevel = 3;
     managerRef.status = 'dependent';
 
@@ -134,9 +141,12 @@ export default function BubbleCountingGame() {
     <View style={styles.container}>
       <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
 
-      {/* Target Number */}
+      {/* Target Number + Word */}
       <Text style={styles.targetText}>{target}</Text>
       <Text style={styles.targetWord}>{numberWords[target]}</Text>
+
+      {/* Popped Counter */}
+      <Text style={styles.counter}>Popped: {poppedCount} / {target}</Text>
 
       {/* Bubbles */}
       {bubbles.map(bubble => !bubble.popped && (
@@ -174,7 +184,12 @@ export default function BubbleCountingGame() {
       {/* Celebrate Overlay */}
       {showCelebrate && (
         <Animated.View style={[styles.overlay, { transform: [{ scale: celebrateAnim }] }]}>
-          <Image source={ASSETS.celebrate} style={styles.overlayImage} />
+          <ExpoImage
+            source={ASSETS.celebrate}
+            style={styles.overlayImage}
+            contentFit="contain"
+            autoplay
+          />
         </Animated.View>
       )}
 
@@ -191,7 +206,8 @@ export default function BubbleCountingGame() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   targetText: { fontSize: 48, color: '#fff', textAlign: 'center', marginTop: 40, fontWeight: 'bold' },
-  targetWord: { fontSize: 24, color: '#fff', textAlign: 'center', marginBottom: 20 },
+  targetWord: { fontSize: 24, color: '#fff', textAlign: 'center', marginBottom: 5 },
+  counter: { fontSize: 20, color: '#FFD166', textAlign: 'center', marginBottom: 20 },
   bubble: { position: 'absolute' },
   buttonRow: { position: 'absolute', bottom: 20, width: '100%', flexDirection: 'row', justifyContent: 'space-evenly' },
   icon: { width: 50, height: 50 },
