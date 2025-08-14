@@ -1,15 +1,200 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
+import { GameFlowManager } from '../utils/GameFlowManager';
+
+const { width, height } = Dimensions.get('window');
+
+const ASSETS = {
+  background: require('../../assets/bg1.gif'),
+  bubble: require('../../assets/ui/icons8-bubble-100.png'),
+  reset: require('../../assets/icons/icon_reset.png'),
+  hint: require('../../assets/ui/hint2.png'),
+  solution: require('../../assets/ui/solution.png'),
+  submit: require('../../assets/ui/icon_submit.png'),
+  celebrate: require('../../assets/ui/icon-confetti.gif'),
+  incorrect: require('../../assets/ui/icon_wrong.gif'),
+};
+
+const numberWords = ["zero","one","two","three","four","five","six","seven","eight","nine"];
 
 export default function BubbleCountingGame() {
+  const [target, setTarget] = useState(0);
+  const [bubbles, setBubbles] = useState<{ id: number, popped: boolean, highlighted: boolean, x: number, y: number }[]>([]);
+  const [poppedCount, setPoppedCount] = useState(0);
+  const [showCelebrate, setShowCelebrate] = useState(false);
+  const [showIncorrect, setShowIncorrect] = useState(false);
+
+  const managerRef = useRef(new GameFlowManager()).current;
+  const celebrateAnim = useRef(new Animated.Value(0)).current;
+  const incorrectAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    startNewProblem();
+  }, []);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.3, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  function startNewProblem() {
+    const newTarget = Math.floor(Math.random() * 10);
+    setTarget(newTarget);
+    setPoppedCount(0);
+    managerRef.resetLevel();
+
+    const bubbleCount = newTarget + Math.floor(Math.random() * 6) + 3;
+    const newBubbles = Array.from({ length: bubbleCount }, (_, i) => ({
+      id: i,
+      popped: false,
+      highlighted: false,
+      x: Math.random() * (width - 100),
+      y: Math.random() * (height - 300) + 150,
+    }));
+    setBubbles(newBubbles);
+  }
+
+  function popBubble(id: number) {
+    setBubbles(prev => prev.map(b => b.id === id ? { ...b, popped: true, highlighted: false } : b));
+    setPoppedCount(prev => prev + 1);
+  }
+
+  function checkAnswer() {
+    const correct = poppedCount === target;
+    managerRef.recordAttempt(correct);
+
+    if (correct) {
+      triggerCelebrate();
+    } else {
+      triggerIncorrect();
+    }
+  }
+
+  function triggerCelebrate() {
+    setShowCelebrate(true);
+    Animated.spring(celebrateAnim, { toValue: 1, useNativeDriver: true }).start(() => {
+      setTimeout(() => {
+        Animated.spring(celebrateAnim, { toValue: 0, useNativeDriver: true }).start(() => {
+          setShowCelebrate(false);
+          startNewProblem();
+        });
+      }, 2000);
+    });
+  }
+
+  function triggerIncorrect() {
+    setShowIncorrect(true);
+    Animated.spring(incorrectAnim, { toValue: 1, useNativeDriver: true }).start(() => {
+      setTimeout(() => {
+        Animated.spring(incorrectAnim, { toValue: 0, useNativeDriver: true }).start(() => {
+          setShowIncorrect(false);
+        });
+      }, 1500);
+    });
+  }
+
+  function showHint() {
+    managerRef.updateHints();
+    if (managerRef.hintLevel === 0) return;
+
+    setBubbles(prev => {
+      let highlightCount = 0;
+      return prev.map(b => {
+        if (!b.popped && highlightCount < managerRef.hintLevel && highlightCount < target) {
+          highlightCount++;
+          return { ...b, highlighted: true };
+        }
+        return b;
+      });
+    });
+  }
+
+  function playSolutionAnimation() {
+    // Mark as dependent
+    managerRef.hintLevel = 3;
+    managerRef.status = 'dependent';
+
+    let delay = 0;
+    bubbles.forEach((bubble, index) => {
+      if (!bubble.popped && index < target) {
+        setTimeout(() => {
+          popBubble(bubble.id);
+        }, delay);
+        delay += 300;
+      }
+    });
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Bubble Counting Game - Coming Soon</Text>
+      <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+
+      {/* Target Number */}
+      <Text style={styles.targetText}>{target}</Text>
+      <Text style={styles.targetWord}>{numberWords[target]}</Text>
+
+      {/* Bubbles */}
+      {bubbles.map(bubble => !bubble.popped && (
+        <TouchableOpacity
+          key={bubble.id}
+          style={[styles.bubble, { top: bubble.y, left: bubble.x }]}
+          onPress={() => popBubble(bubble.id)}
+        >
+          <Animated.Image
+            source={ASSETS.bubble}
+            style={[
+              { width: 50, height: 50 },
+              bubble.highlighted && { transform: [{ scale: pulseAnim }] }
+            ]}
+          />
+        </TouchableOpacity>
+      ))}
+
+      {/* Buttons */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity onPress={startNewProblem}>
+          <Image source={ASSETS.reset} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={showHint}>
+          <Image source={ASSETS.hint} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={playSolutionAnimation}>
+          <Image source={ASSETS.solution} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={checkAnswer}>
+          <Image source={ASSETS.submit} style={styles.icon} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Celebrate Overlay */}
+      {showCelebrate && (
+        <Animated.View style={[styles.overlay, { transform: [{ scale: celebrateAnim }] }]}>
+          <Image source={ASSETS.celebrate} style={styles.overlayImage} />
+        </Animated.View>
+      )}
+
+      {/* Incorrect Overlay */}
+      {showIncorrect && (
+        <Animated.View style={[styles.overlay, { transform: [{ scale: incorrectAnim }] }]}>
+          <Image source={ASSETS.incorrect} style={styles.overlayImage} />
+        </Animated.View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0b1020' },
-  text: { color: '#FFD166', fontSize: 18, textAlign: 'center' },
+  container: { flex: 1 },
+  targetText: { fontSize: 48, color: '#fff', textAlign: 'center', marginTop: 40, fontWeight: 'bold' },
+  targetWord: { fontSize: 24, color: '#fff', textAlign: 'center', marginBottom: 20 },
+  bubble: { position: 'absolute' },
+  buttonRow: { position: 'absolute', bottom: 20, width: '100%', flexDirection: 'row', justifyContent: 'space-evenly' },
+  icon: { width: 50, height: 50 },
+  overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },
+  overlayImage: { width: 150, height: 150, resizeMode: 'contain' },
 });
