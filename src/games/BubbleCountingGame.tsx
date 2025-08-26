@@ -6,7 +6,7 @@ import { GameFlowManager } from '../utils/GameFlowManager';
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
-  background: require('../../assets/bg1.gif'),
+  background: require('../../assets/bg5.jpg'),
   bubbles:[ 
     require('../../assets/ui/icons8-bubble-100.png'),
     require('../../assets/ui/icons_bubbles_green.png'),
