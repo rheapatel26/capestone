@@ -6,13 +6,19 @@ import { GameFlowManager } from '../utils/GameFlowManager';
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
-  background: require('../../assets/bg1.gif'),
-  bubble: require('../../assets/ui/icons8-bubble-100.png'),
+  background: require('../../assets/bg5.jpg'),
+  bubbles:[ 
+    require('../../assets/ui/icons8-bubble-100.png'),
+    require('../../assets/ui/icons_bubbles_green.png'),
+    require('../../assets/ui/icons_bubbles_pink.png'),
+    require('../../assets/ui/icons_bubbles_purple.png'),
+    require('../../assets/ui/icons_bubbles_yellow.png'),
+  ],
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
   submit: require('../../assets/ui/icon_submit.png'),
-  celebrate: require('../../assets/ui/icon-confetti.gif'),
+  celebrate: require('../../assets/ui/Confetti.gif'),
   incorrect: require('../../assets/ui/icon_wrong.gif'),
 };
 
@@ -20,7 +26,7 @@ const numberWords = ["zero","one","two","three","four","five","six","seven","eig
 
 export default function BubbleCountingGame() {
   const [target, setTarget] = useState(0);
-  const [bubbles, setBubbles] = useState<{ id: number, popped: boolean, highlighted: boolean, x: number, y: number }[]>([]);
+  const [bubbles, setBubbles] = useState<{ id: number, popped: boolean, highlighted: boolean, x: number, y: number, colorIndex: number }[]>([]);
   const [poppedCount, setPoppedCount] = useState(0);
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [showIncorrect, setShowIncorrect] = useState(false);
@@ -56,7 +62,8 @@ export default function BubbleCountingGame() {
       highlighted: false,
       x: Math.random() * (width - 100),
       y: Math.random() * (height - 300) + 150,
-    }));
+      colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length) // Assigns a random color
+  }));
     setBubbles(newBubbles);
   }
 
@@ -152,11 +159,11 @@ export default function BubbleCountingGame() {
       {bubbles.map(bubble => !bubble.popped && (
         <TouchableOpacity
           key={bubble.id}
-          style={[styles.bubble, { top: bubble.y, left: bubble.x }]}
+          style={[styles.bubbles, { top: bubble.y, left: bubble.x }]}
           onPress={() => popBubble(bubble.id)}
         >
           <Animated.Image
-            source={ASSETS.bubble}
+            source={ASSETS.bubbles[bubble.colorIndex]}
             style={[
               { width: 50, height: 50 },
               bubble.highlighted && { transform: [{ scale: pulseAnim }] }
@@ -205,10 +212,37 @@ export default function BubbleCountingGame() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  targetText: { fontSize: 48, color: '#fff', textAlign: 'center', marginTop: 40, fontWeight: 'bold' },
-  targetWord: { fontSize: 24, color: '#fff', textAlign: 'center', marginBottom: 5 },
-  counter: { fontSize: 20, color: '#FFD166', textAlign: 'center', marginBottom: 20 },
-  bubble: { position: 'absolute' },
+  targetText: {
+    fontSize: 64,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 50,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+  },
+  targetWord: {
+      fontSize: 32,
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 5,
+      textShadowColor: 'rgba(0, 0, 0, 0.75)',
+      textShadowOffset: { width: -1, height: 1 },
+      textShadowRadius: 5,
+  },
+  counter: {
+      fontSize: 24,
+      color: '#FFD166',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 20,
+      textShadowColor: 'rgba(0, 0, 0, 0.5)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
+  },
+  bubbles: { position: 'absolute' },
   buttonRow: { position: 'absolute', bottom: 20, width: '100%', flexDirection: 'row', justifyContent: 'space-evenly' },
   icon: { width: 50, height: 50 },
   overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },

@@ -17,6 +17,12 @@ import * as pathUtils from 'svg-path-properties';
 const screenWidth = Dimensions.get('window').width;
 const canvasWidth = screenWidth - 40;
 
+const ASSETS = {
+    background: require('../../assets/bg1.gif'),
+    pacman: require('../../assets/1.gif'),
+    apple: require('../../assets/apple.png'),
+};
+
 const numberPath = "M150 80 L250 80 Q280 80 280 110 L280 140 L150 200 L150 230 L280 230";
 const startPoint = { x: 150, y: 80 };
 const endPoint = { x: 280, y: 230 };
@@ -26,9 +32,9 @@ const allowedOffset = 40; // Increased tolerance for easier tracing
 const generateApplePositions = () => {
   const properties = new pathUtils.svgPathProperties(numberPath);
   const totalLength = properties.getTotalLength();
-  const appleSpacing = 20; // Distance between apples
+  const appleSpacing = 25; // Distance between apples
   const positions = [];
-  
+
   for (let i = 0; i <= totalLength; i += appleSpacing) {
     const point = properties.getPointAtLength(i);
     positions.push({ x: point.x, y: point.y, id: i });
@@ -220,23 +226,26 @@ export default function DigitTracingGame() {
           <Circle cx={startPoint.x} cy={startPoint.y} r={15} fill="green" />
           <Circle cx={endPoint.x} cy={endPoint.y} r={15} fill="red" />
 
-          {/* Optional: Show the traced path in a different color */}
-          {line && (
-            <Path 
-              d={line} 
-              stroke="orange" 
-              strokeWidth={10} 
+          {/* Show the traced path */}
+          {line ? (
+            <Path
+              d={line}
+              stroke="orange"
+              strokeWidth={10}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
               opacity={0.7}
             />
-          )}
+          ) : null}
         </Svg>
 
         {/* Render apples along the path */}
-        {applePositions.map(apple => (
-          !eatenApples.has(apple.id) && (
+        {applePositions.map((apple) => {
+          if (eatenApples.has(apple.id)) {
+            return null;
+          }
+          return (
             <Image
               key={apple.id}
               source={require('../../assets/apple.png')}
@@ -244,13 +253,13 @@ export default function DigitTracingGame() {
                 styles.appleImage,
                 {
                   position: 'absolute',
-                  left: apple.x - 10, // Center the apple (assuming 20px width)
-                  top: apple.y - 10,  // Center the apple (assuming 20px height)
+                  left: apple.x - 10,
+                  top: apple.y - 10,
                 }
               ]}
             />
-          )
-        ))}
+          );
+        })}
 
         <Animated.View
           style={[
@@ -272,21 +281,20 @@ export default function DigitTracingGame() {
         >
           {pacmanImage}
         </Animated.View>
-
       </View>
 
-      {isCompleted && (
+      {isCompleted ? (
         <Text style={styles.success}>🎉 Great Job! You traced number 2! 🎉</Text>
-      )}
+      ) : null}
 
       <TouchableOpacity onPress={resetGame} style={styles.button}>
         <Text style={styles.buttonText}>Try Again</Text>
       </TouchableOpacity>
-      
+
       {/* Debug info */}
       <Text style={styles.debugText}>
         Pac-Man at: ({Math.round(pacmanPos.x)}, {Math.round(pacmanPos.y)})
-        {isTracing && " - Tracing!"}
+        {isTracing ? " - Tracing!" : ""}
       </Text>
     </ImageBackground>
   );
@@ -299,18 +307,24 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   title: {
-    marginTop: 120,
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#000000',
+      marginTop: 120,
+      fontSize: 48,
+      fontWeight: '900', // Use a heavier font weight for a bold look
+      color: '#FFFFFF', // White text for high contrast
+      textShadowColor: 'rgba(30, 83, 158, 0.7)', // Dark blue shadow
+      textShadowOffset: { width: 2, height: 2 },
+      textShadowRadius: 8,
   },
   instructions: {
-    fontSize: 14,
-    marginTop: 6,
-    marginBottom: 16,
-    color: '#000000',
-    textAlign: 'center',
-    paddingHorizontal: 20,
+      fontSize: 18,
+      color: '#E0F7FA', // A very light, soft blue
+      textAlign: 'center',
+      paddingHorizontal: 20,
+      marginBottom: 16,
+      fontWeight: '600',
+      textShadowColor: 'rgba(30, 83, 158, 0.7)', // Matching dark blue shadow
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 3,
   },
   traceBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.69)',
@@ -335,25 +349,36 @@ const styles = StyleSheet.create({
     height: 50,
   },
   button: {
-    marginTop: 30,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 30,
+      marginTop: 30,
+      backgroundColor: '#1976D2', // A vibrant, primary blue
+      paddingVertical: 14,
+      paddingHorizontal: 32,
+      borderRadius: 30,
+      // Adding some shadow for a raised effect
+      elevation: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: 'bold',
+    fontSize: 18,
   },
   success: {
-    marginTop: 20,
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-    backgroundColor: 'rgba(46,125,50,0.8)',
-    padding: 10,
-    borderRadius: 10,
+      marginTop: 20,
+      fontSize: 22,
+      color: '#FFD700', // A celebratory gold color
+      fontWeight: 'bold',
+      backgroundColor: 'rgba(25, 118, 210, 0.9)', // A matching blue background
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 15,
+      textAlign: 'center',
+      // Adding a border to make the success message stand out more
+      borderColor: '#FFFFFF',
+      borderWidth: 2,
   },
   debugText: {
     marginTop: 10,

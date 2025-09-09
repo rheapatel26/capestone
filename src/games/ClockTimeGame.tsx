@@ -20,7 +20,7 @@ const ASSETS = {
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
   submit: require('../../assets/ui/icon_submit.png'),
-  celebrate: require('../../assets/ui/icon-confetti.gif'),
+  celebrate: require('../../assets/ui/Confetti.gif'),
   incorrect: require('../../assets/ui/icon_wrong.gif'),
   clockFace: require('../../assets/clockgame/clock_face_pixel.png'),
   hourHand: require('../../assets/clockgame/hour_hand_pixel.png'),

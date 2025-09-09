@@ -66,7 +66,6 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={MainTabs} />
-        {/* Game Screens */}
         <Stack.Screen name="DigitTracingGame" component={DigitTracingGame} />
         <Stack.Screen name="ClockTimeGame" component={ClockTimeGame} />
         <Stack.Screen name="BubbleCountingGame" component={BubbleCountingGame} />
@@ -76,3 +75,9 @@ export default function App() {
     </NavigationContainer>
   );
 }
+// import React from 'react';
+// import DashboardScreen from './src/screens/DashboardScreen';
+
+// export default function App() {
+//   return <DashboardScreen />;
+// }
