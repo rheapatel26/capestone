@@ -75,6 +75,8 @@ export default function App() {
   const [tracedCircles, setTracedCircles] = useState<Array<{x: number, y: number, id: number}>>([]); // New state for traced positions
   const [applePositions, setApplePositions] = useState(() => generateApplePositions(numberPaths[0 as keyof typeof numberPaths])); // Generate apple positions for current level
   const [eatenApples, setEatenApples] = useState<Set<number>>(new Set()); // Track eaten apples
+  const [score, setScore] = useState(0); // Track the score (number of apples eaten)
+  const [hasReachedEnd, setHasReachedEnd] = useState(false); // Track if user reached end point
 
   const pathRef = useRef('');
   const completed = useRef(false);
@@ -168,10 +170,19 @@ export default function App() {
             
             // Check if Pac-Man is near any apples and "eat" them
             applePositions.forEach(apple => {
-              if (Math.hypot(apple.x - x, apple.y - y) < 25) { // Within eating distance
-                setEatenApples(prev => new Set([...prev, apple.id]));
-              }
-            });
+  if (Math.hypot(apple.x - x, apple.y - y) < 25) {
+    setEatenApples(prev => {
+      if (!prev.has(apple.id)) {
+        const updated = new Set(prev);
+        updated.add(apple.id);
+        setScore(updated.size); // ✅ Update score here
+        return updated;
+      }
+      return prev;
+    });
+  }
+});
+
             
             // Add circles along the traced path to create mask effect
             setTracedCircles(prev => [
@@ -191,13 +202,18 @@ export default function App() {
           setPacmanPos({ x, y });
 
           if (isAtEnd(x, y) && !completed.current) {
-            completed.current = true;
-            setIsCompleted(true);
-            setIsAnimating(false);
-            setIsTracing(false);
-            isTracingRef.current = false;
-            console.log('Completed!');
-          }
+  completed.current = true;
+  setIsCompleted(true);
+  setIsAnimating(false);
+  setIsTracing(false);
+  isTracingRef.current = false;
+
+  // Finalize score once completed
+  setScore(eatenApples.size);
+
+  console.log('Completed! Final Score:', eatenApples.size);
+}
+
         }
       },
 
@@ -365,8 +381,16 @@ export default function App() {
       </View>
 
       {isCompleted && (
-        <Text style={styles.success}>🎉 Great Job! You traced number {currentLevel}! 🎉</Text>
-      )}
+  <View style={styles.completionContainer}>
+    <Text style={styles.success}>
+      🎉 Great Job! You traced number {currentLevel}! 🎉
+    </Text>
+    <Text style={styles.finalScore}>
+      🍎 Apples eaten: {score}
+    </Text>
+  </View>
+)}
+
 
       <TouchableOpacity onPress={resetGame} style={styles.button}>
         <Text style={styles.buttonText}>Try Again</Text>
@@ -479,6 +503,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(46,125,50,0.8)',
     padding: 10,
     borderRadius: 10,
+    textAlign: 'center',
+  },
+  completionContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  finalScore: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(255,107,53,0.8)',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 5,
   },
   debugText: {
     marginTop: 10,
