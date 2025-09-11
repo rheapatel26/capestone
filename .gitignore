@@ -32,6 +32,9 @@ yarn-error.*
 # local env files
 .env*.local
 .env
+# Ignore environment file in backend
+backend/.env
+
 
 
 # typescript
