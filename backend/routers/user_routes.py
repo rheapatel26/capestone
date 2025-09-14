@@ -7,11 +7,18 @@ router = APIRouter(prefix="/user", tags=["Users"])
 # Create new user
 @router.post("/")
 async def create_user(user: User):
+    # Clear any provided _id to let MongoDB generate a new one
+    user.id = None
+    
     existing = await User.find_one(User.username == user.username)
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
-    await user.insert()
-    return user
+    
+    try:
+        await user.insert()
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
 
 # Get a user
 @router.get("/{username}")
