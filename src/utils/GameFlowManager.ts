@@ -1,28 +1,39 @@
+import { gameAPI } from './api';
+
 // Universal Game Flow Manager
 // Handles attempts, hints, grading, advancement
 
 export type IndependenceStatus = 'independent' | 'partial' | 'dependent';
+
+interface GameConfig {
+  username: string;
+  gameName: string;
+  currentLevel: number;
+}
 
 export class GameFlowManager {
   attempts: number;
   incorrectAttempts: number;
   hintLevel: number; // 0-3
   status: IndependenceStatus | null;
+  private config?: GameConfig;
 
-  constructor() {
+  constructor(config?: GameConfig) {
     this.attempts = 0;
     this.incorrectAttempts = 0;
     this.hintLevel = 0;
     this.status = null;
+    this.config = config;
   }
 
-  recordAttempt(correct: boolean) {
+  async recordAttempt(correct: boolean) {
     this.attempts++;
     if (!correct) {
       this.incorrectAttempts++;
       this.updateHints();
     }
     this.evaluateStatus(correct);
+    await this.syncWithBackend();
   }
 
   updateHints() {
@@ -44,10 +55,32 @@ export class GameFlowManager {
     }
   }
 
-  resetLevel() {
+  async resetLevel() {
     this.attempts = 0;
     this.incorrectAttempts = 0;
     this.hintLevel = 0;
     this.status = null;
+    await this.syncWithBackend();
+  }
+
+  private async syncWithBackend() {
+    if (!this.config) return;
+
+    try {
+      await gameAPI.updateProgress(
+        this.config.username,
+        this.config.gameName,
+        `level${this.config.currentLevel}`,
+        {
+          attempts: this.attempts,
+          incorrectAttempts: this.incorrectAttempts,
+          hintLevel: this.hintLevel,
+          status: this.status,
+          completed: this.status !== null
+        }
+      );
+    } catch (error) {
+      console.error('Error syncing with backend:', error);
+    }
   }
 }

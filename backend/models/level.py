@@ -1,7 +1,9 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class LevelData(BaseModel):
-    hints_used: int = 0
-    solution_used: bool = False
-    incorrect: int = 0
-    correct_attempts: int = 0
+    attempts: int = 0
+    incorrectAttempts: int = 0
+    hintLevel: int = 0
+    status: Optional[str] = None  # 'independent' | 'partial' | 'dependent'
+    completed: bool = False

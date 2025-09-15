@@ -3,8 +3,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Image } from 'react-native';
+import { AuthProvider, useAuth } from './src/utils/AuthContext';
+import { GameProgressProvider } from './src/utils/GameProgressContext';
 
 // Screens
+import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -61,23 +64,37 @@ function MainTabs() {
   );
 }
 
-export default function App() {
+function Navigation() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="DigitTracingGame" component={DigitTracingGame} />
-        <Stack.Screen name="ClockTimeGame" component={ClockTimeGame} />
-        <Stack.Screen name="BubbleCountingGame" component={BubbleCountingGame} />
-        <Stack.Screen name="AddSubBubblesGame" component={AddSubBubblesGame} />
-        <Stack.Screen name="MoneyConceptGame" component={MoneyConceptGame} />
+        {!isAuthenticated ? (
+          // Auth Stack
+          <Stack.Screen name="Login" component={LoginScreen} />
+        ) : (
+          // Main App Stack
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="BubbleCountingGame" component={BubbleCountingGame} />
+            <Stack.Screen name="DigitTracingGame" component={DigitTracingGame} />
+            <Stack.Screen name="ClockTimeGame" component={ClockTimeGame} />
+            <Stack.Screen name="AddSubBubblesGame" component={AddSubBubblesGame} />
+            <Stack.Screen name="MoneyConceptGame" component={MoneyConceptGame} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-// import React from 'react';
-// import DashboardScreen from './src/screens/DashboardScreen';
 
-// export default function App() {
-//   return <DashboardScreen />;
-// }
+export default function App() {
+  return (
+    <AuthProvider>
+      <GameProgressProvider>
+        <Navigation />
+      </GameProgressProvider>
+    </AuthProvider>
+  );
+}

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image'; // For GIF playback
 import { GameFlowManager } from '../utils/GameFlowManager';
+import { useAuth } from '../utils/AuthContext';
+import { useGameProgress } from '../utils/GameProgressContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,13 +27,28 @@ const ASSETS = {
 const numberWords = ["zero","one","two","three","four","five","six","seven","eight","nine"];
 
 export default function BubbleCountingGame() {
+  const { username, isAuthenticated } = useAuth();
+  const { currentLevels, updateGameProgress } = useGameProgress();
+  
   const [target, setTarget] = useState(0);
   const [bubbles, setBubbles] = useState<{ id: number, popped: boolean, highlighted: boolean, x: number, y: number, colorIndex: number }[]>([]);
   const [poppedCount, setPoppedCount] = useState(0);
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [showIncorrect, setShowIncorrect] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(1);
 
-  const managerRef = useRef(new GameFlowManager()).current;
+  const managerRef = useRef(new GameFlowManager({
+    username: username || "guest",
+    gameName: "Game1",
+    currentLevel: currentLevel
+  })).current;
+
+  // Update current level based on game progress
+  useEffect(() => {
+    if (isAuthenticated && currentLevels.Game1) {
+      setCurrentLevel(currentLevels.Game1);
+    }
+  }, [isAuthenticated, currentLevels]);
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -92,6 +109,13 @@ export default function BubbleCountingGame() {
 
   function triggerCelebrate() {
     setShowCelebrate(true);
+    
+    // Update game progress when level is completed
+    if (isAuthenticated && username) {
+      updateGameProgress("Game1", currentLevel);
+      setCurrentLevel(prev => prev + 1);
+    }
+
     Animated.spring(celebrateAnim, { toValue: 1, useNativeDriver: true }).start(() => {
       setTimeout(() => {
         Animated.spring(celebrateAnim, { toValue: 0, useNativeDriver: true }).start(() => {
