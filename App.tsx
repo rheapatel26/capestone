@@ -28,6 +28,7 @@ function MainTabs() {
         tabBarStyle: { backgroundColor: '#222', height: 60 },
         tabBarActiveTintColor: '#FFD166',
         tabBarInactiveTintColor: '#aaa',
+        tabBarLabelStyle: { fontFamily: 'PixelFont', fontSize: 7, fontWeight: '100'},
       }}
     >
       <Tab.Screen

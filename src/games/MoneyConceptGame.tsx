@@ -364,8 +364,8 @@ export default function MoneyConceptGame() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { marginTop: 36, alignItems: 'center' },
-  levelTitle: { color: '#fff', fontSize: 14, marginBottom: 6 },
-  question: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  levelTitle: { color: '#fff', fontSize: 14, marginBottom: 6, fontFamily: 'PixelFont' },
+  question: { color: '#fff', fontSize: 22, fontWeight: 'bold', fontFamily: 'PixelFont' },
 
   itemWrap: { alignItems: 'center', marginTop: 10 },
   itemImg: { width: 90, height: 90, resizeMode: 'contain' },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.25)',
     borderRadius: 10,
   },
-  totalText: { color: '#FFD166', fontSize: 18, marginBottom: 8, textAlign: 'center' },
+  totalText: { color: '#FFD166', fontSize: 18, marginBottom: 8, textAlign: 'center', fontFamily: 'PixelFont' },
   selectedRow: { alignItems: 'center' },
 
   tray: {
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
 
   coinPicked: { width: 48, height: 48, marginRight: 6 },
   notePicked: { width: 80, height: 40, marginRight: 6 },
-  pickLabel: { color: '#fff', fontSize: 12, marginTop: 4, textAlign: 'center' },
+  pickLabel: { color: '#fff', fontSize: 12, marginTop: 4, textAlign: 'center', fontFamily: 'PixelFont' },
 
   buttonRow: {
     position: 'absolute',

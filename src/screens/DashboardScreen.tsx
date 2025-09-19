@@ -1,9 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList, StatusBar } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Image, 
+  FlatList, 
+  StatusBar, 
+  ImageBackground 
+} from 'react-native';
+import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// --- Type Definitions (No changes needed here) ---
+// --- Type Definitions ---
 type RootStackParamList = {
   Dashboard: undefined;
   DigitTracingGame: undefined;
@@ -34,6 +44,10 @@ const games: { id: string; name: string; icon: any; screen: GameScreenNames }[] 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavProp>();
 
+    const [fontsLoaded] = useFonts({
+    PixelFont: require('../../assets/fonts/PressStart2P-Regular.ttf'),
+  });
+
   const renderGameCard = ({ item }: { item: typeof games[0] }) => (
     <TouchableOpacity 
       style={styles.card} 
@@ -46,10 +60,12 @@ export default function DashboardScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require('../../assets/menu_bg.png')} // background image
+      style={styles.background}
+      resizeMode="cover"
+    >
       <StatusBar barStyle="dark-content" />
-      <Text style={styles.title}>Let's Play!</Text>
-      <Text style={styles.subtitle}>Choose a game to start</Text>
       <FlatList
         data={games}
         numColumns={2}
@@ -58,61 +74,66 @@ export default function DashboardScreen() {
         renderItem={renderGameCard}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+    </ImageBackground>
   );
 }
 
-// --- NEW ENHANCED STYLESHEET ---
+// --- Stylesheet ---
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: '#E0EFFF', // Palette: Soft Powder Blue background
-    paddingTop: 80, // More space for the title
+    paddingTop: 80,
     paddingHorizontal: 10,
   },
   title: {
     fontSize: 34,
     fontWeight: 'bold',
-    color: '#4D8080', // Palette: Muted Teal for text
+    fontFamily: 'PixelFont',
+    color: '#ffffff',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 18,
-    color: '#4D8080', // Palette: Muted Teal for text
+    color: '#f0f0f0',
     textAlign: 'center',
-    marginBottom: 30, // Space between title and grid
+    fontFamily: 'PixelFont',
+    marginBottom: 30,
   },
   grid: {
-    paddingBottom: 20, // Padding at the bottom of the list
+    paddingBottom: 20,
+    marginTop: 75,
   },
   card: {
-    flex: 1,
+    flex: 2,
     margin: 10,
-    backgroundColor: '#FFFFFF', // Clean white cards
-    borderRadius: 20, // Softer, more modern corners
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    aspectRatio: 1, // Make the cards perfectly square
-    // --- Adding depth with shadows ---
-    shadowColor: '#4D8080', // Shadow color from the palette
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
+    flexDirection: 'row', // 👈 makes icon + text side by side
+    alignItems: 'center', // vertically center
+    justifyContent: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.51)',
+    borderRadius: 20,
+    padding: 10,
+    aspectRatio: 1.95,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
-    elevation: 10, // For Android shadow
+    elevation: 10,
   },
   icon: {
-    width: '60%', // Icon size relative to the card
-    height: '60%',
-    marginBottom: 10,
+    width: "75%",  // 👈 fixed width
+    height: "75%", // 👈 fixed height
+    resizeMode: 'contain',
+    marginRight: -24,
+    marginLeft: -35,
   },
   cardText: {
-    color: '#4D8080', // Palette: Muted Teal text on the card
-    fontSize: 16,
-    fontWeight: '600', // Bolder font
-    textAlign: 'center',
+    flex: 1, // 👈 text takes remaining space
+    color: '#4D8080',
+    fontFamily: 'PixelFont',
+    fontSize: 13,
+    lineHeight: 25,
+    fontWeight: '400',
+    textAlign: 'left',
   },
 });
+
