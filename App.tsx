@@ -4,10 +4,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Image } from 'react-native';
 
+// Context
+import { UserProvider, useUser } from './src/context/UserContext';
+
 // Screens
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import LoginScreen from './src/screens/LoginScreen';
 
 // Games
 import DigitTracingGame from './src/games/DigitTracingGame';
@@ -61,7 +65,16 @@ function MainTabs() {
   );
 }
 
-export default function App() {
+// Component that handles authentication flow
+function AppContent() {
+  const { user } = useUser();
+  
+  // If no user is logged in, show login screen
+  if (!user) {
+    return <LoginScreen onLoginSuccess={() => {/* Navigation will handle this */}} />;
+  }
+  
+  // If user is logged in, show main app
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -73,6 +86,14 @@ export default function App() {
         <Stack.Screen name="MoneyConceptGame" component={MoneyConceptGame} />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
   );
 }
 // import React from 'react';

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
 
 // --- Type Definitions for our data (This fixes the TypeScript error) ---
 interface GameStat {
@@ -104,29 +105,57 @@ const GameReportCard = ({ gameStat }: { gameStat: GameStat }) => {
 
 // --- Main Profile Screen Component ---
 export default function ProfileScreen() {
-  const stats = hardcodedStats;
-  const allGameStats = Object.values(stats.statsByGame);
-  const totalGamesPlayed = allGameStats.length;
-  const totalIndependent = allGameStats.reduce((sum, game) => sum + game.independentSolutions, 0);
-  const totalWithHints = allGameStats.reduce((sum, game) => sum + game.hintSolutions, 0);
-  const totalNeedsPractice = allGameStats.reduce((sum, game) => sum + game.needsPractice, 0);
+  const { user, logout, refreshUser } = useUser();
+
+  // Since authentication is now handled at app level, user should always exist here
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Calculate stats from backend user data
+  const gameStats = calculateGameStats(user);
+  const totalGamesPlayed = gameStats.length;
+  const totalIndependent = gameStats.reduce((sum, game) => sum + game.independentSolutions, 0);
+  const totalWithHints = gameStats.reduce((sum, game) => sum + game.hintSolutions, 0);
+  const totalNeedsPractice = gameStats.reduce((sum, game) => sum + game.needsPractice, 0);
   const totalProblemsAttempted = totalIndependent + totalWithHints + totalNeedsPractice;
   const totalSolutions = totalIndependent + totalWithHints;
   const independenceRate = totalSolutions > 0 ? Math.round((totalIndependent / totalSolutions) * 100) : 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.title}>{stats.userName}'s Learning Journey</Text>
-      <View style={styles.dateContainer}>
-        <MaterialCommunityIcons name="calendar-blank" size={16} color="#4D8080" />
-        <Text style={styles.subtitle}>Last active: {stats.lastActive}</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{user.username}'s Learning Journey</Text>
+        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </View>
+      
+      <TouchableOpacity onPress={refreshUser} style={styles.refreshButton}>
+        <MaterialCommunityIcons name="refresh" size={20} color="#4D8080" />
+        <Text style={styles.refreshText}>Refresh Data</Text>
+      </TouchableOpacity>
       
       {/* Overall Stats */}
       <View style={[styles.card, styles.overallStatsCard]}>
         <StatBox icon="book-open-variant" label="Games Played" value={totalGamesPlayed} />
         <StatBox icon="target" label="Problems Attempted" value={totalProblemsAttempted} />
         <StatBox icon="trending-up" label="Independence" value={`${independenceRate}%`} />
+      </View>
+      
+      {/* Levels Completed */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Levels Completed</Text>
+        {Object.entries(user.levels_completed).map(([game, levels]) => (
+          <View key={game} style={styles.levelRow}>
+            <Text style={styles.levelGame}>{game}</Text>
+            <Text style={styles.levelCount}>{levels} levels</Text>
+          </View>
+        ))}
       </View>
       
       {/* Breakdown Card */}
@@ -137,13 +166,75 @@ export default function ProfileScreen() {
         <BreakdownRow color="#ef5350" label="Needs More Practice" value={totalNeedsPractice} />
       </View>
 
-      {/* Game-by-Game Reports Title */}
+      {/* Game-by-Game Reports */}
       <Text style={styles.reportsTitle}>Game-by-Game Reports</Text>
-      {allGameStats.map(gameStat => (
+      {gameStats.map(gameStat => (
         <GameReportCard key={gameStat.gameId} gameStat={gameStat} />
       ))}
     </ScrollView>
   );
+}
+
+// Function to calculate game statistics from backend user data
+function calculateGameStats(user: any): GameStat[] {
+  const gameMapping = {
+    'Game1': 'Bubble Counting',
+    'Game2': 'Digit Tracing',
+    'Game3': 'Clock Time',
+    'Game4': 'Money Concept',
+    'Game5': 'Add/Sub Bubbles',
+  };
+
+  const gameStats: GameStat[] = [];
+
+  Object.entries(gameMapping).forEach(([gameKey, gameName]) => {
+    const gameData = user[gameKey];
+    if (!gameData) return;
+
+    let attempts = 0;
+    let independentSolutions = 0;
+    let hintSolutions = 0;
+    let needsPractice = 0;
+    let currentLevel = 1;
+
+    // Process each level
+    Object.entries(gameData).forEach(([levelKey, levelData]: [string, any]) => {
+      if (levelData) {
+        attempts += levelData.correct_attempts + levelData.incorrect;
+        
+        if (levelData.correct_attempts > 0) {
+          if (levelData.hints_used === 0 && !levelData.solution_used) {
+            independentSolutions += levelData.correct_attempts;
+          } else {
+            hintSolutions += levelData.correct_attempts;
+          }
+          
+          // Update current level
+          const levelNum = parseInt(levelKey.replace('level', ''));
+          if (levelNum > currentLevel) {
+            currentLevel = levelNum;
+          }
+        }
+        
+        if (levelData.incorrect > 3) {
+          needsPractice++;
+        }
+      }
+    });
+
+    gameStats.push({
+      gameId: gameKey,
+      gameName,
+      attempts,
+      currentLevel,
+      maxLevel: 5,
+      independentSolutions,
+      hintSolutions,
+      needsPractice,
+    });
+  });
+
+  return gameStats;
 }
 
 // --- NEW STYLESHEET (Dashboard Theme Applied) ---
@@ -290,6 +381,55 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     fontWeight: 'bold', 
     color: '#4D8080' 
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoutButton: {
+    backgroundColor: '#ef5350',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  logoutText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f0f8ff',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  refreshText: {
+    color: '#4D8080',
+    marginLeft: 8,
+    fontWeight: '600',
+  },
+  levelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  levelGame: {
+    fontSize: 14,
+    color: '#4D8080',
+    fontWeight: '600',
+  },
+  levelCount: {
+    fontSize: 14,
+    color: '#5f8a8a',
+    fontWeight: 'bold',
   },
 });
 

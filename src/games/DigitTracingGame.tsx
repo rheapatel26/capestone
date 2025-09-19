@@ -14,6 +14,9 @@ import {
 
 import Svg, { Path, Circle, Defs, Mask, Rect } from 'react-native-svg';
 import * as pathUtils from 'svg-path-properties';
+import { GameFlowManager, GameConfig } from '../utils/GameFlowManager';
+import { useUser } from '../context/UserContext';
+import { getBackendGameName, getLevelName } from '../utils/gameMapping';
 const screenWidth = Dimensions.get('window').width;
 const canvasWidth = screenWidth - 40;
 
@@ -43,11 +46,14 @@ const generateApplePositions = () => {
   return positions;
 };
 
-export default function DigitTracingGame() {
+export default function DigitTracingGame({ currentLevel = 1, onLevelComplete }: { currentLevel?: number; onLevelComplete?: () => void }) {
   const [line, setLine] = useState('');
   const [pacmanPos, setPacmanPos] = useState(startPoint);
   const [isCompleted, setIsCompleted] = useState(false);
   const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
+
+  const { user } = useUser();
+  const managerRef = useRef(new GameFlowManager()).current;
   const [isAnimating, setIsAnimating] = useState(false);
   const [isTracing, setIsTracing] = useState(false);
   const [tracedCircles, setTracedCircles] = useState<Array<{x: number, y: number, id: number}>>([]); // New state for traced positions
@@ -61,6 +67,18 @@ export default function DigitTracingGame() {
   const properties = new pathUtils.svgPathProperties(numberPath);
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Configure backend integration
+  useEffect(() => {
+    if (user) {
+      const config: GameConfig = {
+        username: user.username,
+        gameName: getBackendGameName('DigitTracingGame'),
+        levelName: getLevelName(currentLevel),
+      };
+      managerRef.setConfig(config);
+    }
+  }, [user, currentLevel]);
 
   const pacmanImage = useMemo(() => (
   <Image
@@ -165,6 +183,12 @@ export default function DigitTracingGame() {
             setIsTracing(false);
             isTracingRef.current = false;
             console.log('Completed!');
+            
+            // Record successful completion
+            managerRef.recordAttempt(true);
+            managerRef.markLevelComplete().then(() => {
+              onLevelComplete?.();
+            }).catch(console.error);
           }
         }
       },
