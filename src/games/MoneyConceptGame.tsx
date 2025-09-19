@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window');
 
 // ---------- SHARED ASSETS (same paths as your other games) ----------
 const ASSETS = {
-  background: require('../../assets/bg1.gif'),
+  background: require('../../assets/ui/dark_bg.jpg'),
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
