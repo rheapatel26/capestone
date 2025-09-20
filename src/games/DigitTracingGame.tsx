@@ -308,26 +308,24 @@ const styles = StyleSheet.create({
   },
   title: {
       marginTop: 120,
-      fontSize: 48,
+      fontSize: 24,
       fontFamily: 'PixelFont',
-      color: '#FFFFFF', // White text for high contrast
+      color: '#ffd900ff', // White text for high contrast
       textShadowColor: 'rgba(30, 83, 158, 0.7)', // Dark blue shadow
       textShadowOffset: { width: 2, height: 2 },
       textShadowRadius: 8,
   },
   instructions: {
-      fontSize: 18,
+      fontSize: 14,
       fontFamily: 'PixelFont',
-      color: '#E0F7FA', // A very light, soft blue
+      color: '#01035d6e', // A very light, soft blue
       textAlign: 'center',
-      paddingHorizontal: 20,
+      paddingHorizontal: 40,
       marginBottom: 16,
-      textShadowColor: 'rgba(30, 83, 158, 0.7)', // Matching dark blue shadow
-      textShadowOffset: { width: 1, height: 1 },
-      textShadowRadius: 3,
+      top: 10,
   },
   traceBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.69)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 20,
     padding: 20,
     width: canvasWidth,

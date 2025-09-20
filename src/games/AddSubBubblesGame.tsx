@@ -6,13 +6,13 @@ import { GameFlowManager } from '../utils/GameFlowManager';
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
-  background: require('../../assets/bg1.gif'),
+  background: require('../../assets/addsub_bg1.png'),
   bubble: require('../../assets/ui/icons8-bubble-100.png'),
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
   submit: require('../../assets/ui/icon_submit.png'),
-  celebrate: require('../../assets/ui/icon-confetti.gif'),
+  celebrate: require('../../assets/ui/Confetti.gif'),
   incorrect: require('../../assets/ui/icon_wrong.gif'),
 };
 
@@ -277,19 +277,27 @@ export default function AddSubBubblesGame() {
 
   return (
     <View style={styles.container}>
-      <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      {/* <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" /> */}
+
+      <Image 
+              source={ASSETS.background} 
+              style={[
+                StyleSheet.absoluteFillObject,
+                { width: '100%', height: '100%', resizeMode: 'stretch' }
+              ]} 
+            />
 
       {/* Problem Display */}
       <View style={styles.problemContainer}>
         <Text style={styles.problemText}>
           {currentProblem.num1} {currentProblem.operator} {currentProblem.num2} = ?
         </Text>
-        <Text style={styles.instructionText}>
+        {/* <Text style={styles.instructionText}>
           {currentProblem.operator === '+' 
             ? 'Add bubbles to match the answer' 
             : 'Find the answer bubble or add bubbles that equal the answer'
           }
-        </Text>
+        </Text> */}
       </View>
 
       {/* Bubble Tray */}
@@ -394,37 +402,39 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   problemContainer: {
     alignItems: 'center',
-    marginTop: Platform.OS === 'web' ? 40 : 20,
+    marginTop: Platform.OS === 'web' ? 400 : 200,
     marginBottom: 20,
+    color: 'darkblue',
   },
   problemText: {
     fontSize: 24,
-    color: '#fff',
+    color: '#fb8943ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
     marginBottom: 10,
   },
-  instructionText: {
-    fontSize: 16,
-    color: '#fff',
-    fontFamily: 'PixelFont',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  // instructionText: {
+  //   fontSize: 16,
+  //   color: '#fff',
+  //   fontFamily: 'PixelFont',
+  //   textAlign: 'center',
+  //   marginBottom: 20,
+  // },
   trayContainer: {
     position: 'absolute',
-    top: Platform.OS === 'web' ? 120 : 100,
+    top: Platform.OS === 'web' ? 100 : 80,
     left: 20,
     right: 20,
-    backgroundColor: 'rgba(255, 209, 102, 0.2)',
+    backgroundColor: 'rgba(214, 214, 214, 0.2)',
     borderRadius: 15,
     padding: 15,
     borderWidth: 2,
-    borderColor: '#FFD166',
+    marginTop: 160,
+    borderColor: '#1f0086ff',
   },
   trayLabel: {
     fontSize: 18,
-    color: '#FFD166',
+    color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
     marginBottom: 10,
@@ -433,7 +443,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    minHeight: 60,
+    minHeight: 40,
   },
   trayBubble: {
     position: 'relative',
@@ -453,21 +463,21 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: 20,
-    color: '#FFD166',
+    color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
   },
   availableContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'web' ? 100 : 80,
+    bottom: Platform.OS === 'web' ? 20 : 180,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingVertical: 10,
+    backgroundColor: 'rgba(249, 249, 249, 0.3)',
+    paddingVertical: 5,
   },
   availableLabel: {
     fontSize: 18,
-    color: '#FFD166',
+    color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
     marginBottom: 10,
@@ -487,21 +497,23 @@ const styles = StyleSheet.create({
   },
   bubbleValue: {
     fontSize: 18,
-    color: '#fff',
+    color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
   },
   buttonRow: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 0,
+    padding:9,
     width: '100%',
     flexDirection: 'row',
+    backgroundColor: 'rgba(133, 172, 239, 0.8)',
     justifyContent: 'space-evenly',
   },
   icon: {
     width: 50,
     height: 50,
-  },
+  }, 
   overlay: {
     position: 'absolute',
     top: '40%',

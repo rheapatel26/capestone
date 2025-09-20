@@ -6,8 +6,8 @@ import { GameFlowManager } from '../utils/GameFlowManager';
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
-  background: require('../../assets/bg5.jpg'),
-  bubbles:[ 
+  background: require('../../assets/bubblecount_bg1.png'),
+  bubbles: [
     require('../../assets/ui/icons8-bubble-100.png'),
     require('../../assets/ui/icons_bubbles_green.png'),
     require('../../assets/ui/icons_bubbles_pink.png'),
@@ -22,7 +22,7 @@ const ASSETS = {
   incorrect: require('../../assets/ui/icon_wrong.gif'),
 };
 
-const numberWords = ["zero","one","two","three","four","five","six","seven","eight","nine"];
+const numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 export default function BubbleCountingGame() {
   const [target, setTarget] = useState(0);
@@ -56,14 +56,27 @@ export default function BubbleCountingGame() {
     managerRef.resetLevel();
 
     const bubbleCount = newTarget + Math.floor(Math.random() * 6) + 3;
+    //   const newBubbles = Array.from({ length: bubbleCount }, (_, i) => ({
+    //     id: i,
+    //     popped: false,
+    //     highlighted: false,
+    //     x: Math.random() * (width - 100),
+    //     y: Math.random() * (height - 300) + 150,
+    //     colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length) // Assigns a random color
+    // }));
+    //   setBubbles(newBubbles);
+    // }
+    const containerWidth = width * 0.9;  // same as bubbleContainer width
+    const containerHeight = 300;        // same as bubbleContainer height
+
     const newBubbles = Array.from({ length: bubbleCount }, (_, i) => ({
       id: i,
       popped: false,
       highlighted: false,
-      x: Math.random() * (width - 100),
-      y: Math.random() * (height - 300) + 150,
-      colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length) // Assigns a random color
-  }));
+      x: Math.random() * (containerWidth - 60),   // 60 = bubble size
+      y: Math.random() * (containerHeight - 60),
+      colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length)
+    }));
     setBubbles(newBubbles);
   }
 
@@ -146,8 +159,15 @@ export default function BubbleCountingGame() {
 
   return (
     <View style={styles.container}>
-      <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      {/* <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" /> */}
 
+      <Image
+        source={ASSETS.background}
+        style={[
+          StyleSheet.absoluteFillObject,
+          { width: '100%', height: '100%', resizeMode: 'stretch' }
+        ]}
+      />
       {/* Target Number + Word */}
       <Text style={styles.targetText}>{target}</Text>
       <Text style={styles.targetWord}>{numberWords[target]}</Text>
@@ -155,7 +175,7 @@ export default function BubbleCountingGame() {
       {/* Popped Counter */}
       <Text style={styles.counter}>Popped: {poppedCount} / {target}</Text>
 
-      {/* Bubbles */}
+      {/* Bubbles
       {bubbles.map(bubble => !bubble.popped && (
         <TouchableOpacity
           key={bubble.id}
@@ -170,7 +190,38 @@ export default function BubbleCountingGame() {
             ]}
           />
         </TouchableOpacity>
-      ))}
+      ))} */}
+
+      {/* Bubble Container */}
+      {/* Bubble Container */}
+      <View
+        style={styles.bubbleContainer}
+        onLayout={(event) => {
+          const { width: cWidth, height: cHeight } = event.nativeEvent.layout;
+          // Save container dimensions in state if needed
+        }}
+      >
+        {bubbles.map(bubble => !bubble.popped && (
+          <TouchableOpacity
+            key={bubble.id}
+            style={[
+              styles.bubbles,
+              { top: bubble.y, left: bubble.x }
+            ]}
+            onPress={() => popBubble(bubble.id)}
+          >
+            <Animated.Image
+              source={ASSETS.bubbles[bubble.colorIndex]}
+              style={[
+                { width: 50, height: 50 },
+                bubble.highlighted && { transform: [{ scale: pulseAnim }] }
+              ]}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+
+
 
       {/* Buttons */}
       <View style={styles.buttonRow}>
@@ -214,27 +265,43 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   targetText: {
     fontSize: 48,
-    color: '#fff',
+    color: '#3b469aff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
-    marginBottom: 8,
+    marginTop: 189,
+    marginBottom: -165,
   },
+  bubbleContainer: {
+    width: "100%",
+    height: 350,   // fixed play area
+    alignSelf: "center",
+    marginTop: 50,
+    // backgroundColor: "rgba(255,255,255,0.2)", // optional, just to see the container
+    borderRadius: 16,
+    overflow: "hidden",
+    position: "relative",  // key for absolute children
+  },
+
+  bubbles: {
+    position: "absolute",
+  },
+
   targetWord: {
     fontSize: 24,
-    color: '#fff',
+    color: '#3b469aff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
-    marginBottom: 20,
+    marginTop: 170,
+    marginBottom: -165,
   },
   counter: {
     fontSize: 20,
-    color: '#FFD166',
+    color: '#00b81cff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
-    marginBottom: 20,
+    marginTop: 180,
   },
-  bubbles: { position: 'absolute' },
-  buttonRow: { position: 'absolute', bottom: 20, width: '100%', flexDirection: 'row', justifyContent: 'space-evenly' },
+  buttonRow: { position: 'absolute', width: '100%', flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'rgba(236, 181, 62, 1)', padding: 14, bottom: 0 },
   icon: { width: 50, height: 50 },
   overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },
   overlayImage: { width: 150, height: 150, resizeMode: 'contain' },

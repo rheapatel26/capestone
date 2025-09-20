@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     flex: 1, // 👈 text takes remaining space
     color: '#4D8080',
     fontFamily: 'PixelFont',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 25,
     fontWeight: '400',
     textAlign: 'left',
