@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image'; // For GIF playback
-import { GameFlowManager, GameConfig } from '../utils/GameFlowManager';
-import { useUser } from '../context/UserContext';
-import { getBackendGameName, getLevelName } from '../utils/gameMapping';
+import { GameFlowManager } from '../utils/GameFlowManager';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,19 +24,13 @@ const ASSETS = {
 
 const numberWords = ["zero","one","two","three","four","five","six","seven","eight","nine"];
 
-interface BubbleCountingGameProps {
-  currentLevel?: number;
-  onLevelComplete?: () => void;
-}
-
-export default function BubbleCountingGame({ currentLevel = 1, onLevelComplete }: BubbleCountingGameProps) {
+export default function BubbleCountingGame() {
   const [target, setTarget] = useState(0);
   const [bubbles, setBubbles] = useState<{ id: number, popped: boolean, highlighted: boolean, x: number, y: number, colorIndex: number }[]>([]);
   const [poppedCount, setPoppedCount] = useState(0);
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [showIncorrect, setShowIncorrect] = useState(false);
 
-  const { user } = useUser();
   const managerRef = useRef(new GameFlowManager()).current;
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
@@ -46,17 +38,7 @@ export default function BubbleCountingGame({ currentLevel = 1, onLevelComplete }
 
   useEffect(() => {
     startNewProblem();
-    
-    // Configure the game manager with backend integration
-    if (user) {
-      const config: GameConfig = {
-        username: user.username,
-        gameName: getBackendGameName('BubbleCountingGame'),
-        levelName: getLevelName(currentLevel),
-      };
-      managerRef.setConfig(config);
-    }
-  }, [user, currentLevel]);
+  }, []);
 
   useEffect(() => {
     Animated.loop(
@@ -103,12 +85,8 @@ export default function BubbleCountingGame({ currentLevel = 1, onLevelComplete }
 
     if (correct) {
       triggerCelebrate();
-      // Sync progress with backend
-      managerRef.syncWithBackend().catch(console.error);
     } else {
       triggerIncorrect();
-      // Also sync progress on incorrect attempts
-      managerRef.syncWithBackend().catch(console.error);
     }
   }
 
@@ -118,12 +96,6 @@ export default function BubbleCountingGame({ currentLevel = 1, onLevelComplete }
       setTimeout(() => {
         Animated.spring(celebrateAnim, { toValue: 0, useNativeDriver: true }).start(() => {
           setShowCelebrate(false);
-          
-          // Mark level as complete in backend
-          managerRef.markLevelComplete().then(() => {
-            onLevelComplete?.();
-          }).catch(console.error);
-          
           startNewProblem();
         });
       }, 2000);
@@ -155,13 +127,9 @@ export default function BubbleCountingGame({ currentLevel = 1, onLevelComplete }
         return b;
       });
     });
-
-    // Sync hint usage with backend
-    managerRef.syncWithBackend().catch(console.error);
   }
 
   function playSolutionAnimation() {
-    managerRef.useSolution();
     managerRef.hintLevel = 3;
     managerRef.status = 'dependent';
 
@@ -174,9 +142,6 @@ export default function BubbleCountingGame({ currentLevel = 1, onLevelComplete }
         delay += 300;
       }
     });
-
-    // Sync solution usage with backend
-    managerRef.syncWithBackend().catch(console.error);
   }
 
   return (
