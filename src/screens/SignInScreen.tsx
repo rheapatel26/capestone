@@ -1,0 +1,133 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+// Define the types for your authentication stack
+type AuthStackParamList = {
+  SignIn: undefined;
+  SignUP: undefined;
+};
+
+type SignInNavProp = NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
+
+const ASSETS = {
+  background: require('../../assets/bg3.jpg'), // Adjust path as needed
+};
+
+export default function SignInScreen() {
+  const navigation = useNavigation<SignInNavProp>();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSignIn = () => {
+    // Implement your custom sign-in logic here
+    console.log('Signing in with:', email, password);
+    Alert.alert('Sign In', 'Sign in functionality not yet implemented.');
+  };
+
+  return (
+    <ImageBackground
+      source={ASSETS.background}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <Text style={styles.title}>MATH.IO</Text>
+      <Text style={styles.subtitle}>LEARN. PLAY. CHALLENGE</Text>
+      
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#A0A0A0"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#A0A0A0"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+          <Text style={styles.buttonText}>Log In</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <TouchableOpacity onPress={() => navigation.navigate('SignUP')}>
+        <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+      </TouchableOpacity>
+    </ImageBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 48,
+    // fontFamily: 'PixelatedFont',
+    color: '#8A2BE2',
+    textShadowColor: '#4B0082',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
+  },
+  subtitle: {
+    fontSize: 18,
+    // fontFamily: 'PixelatedFont',
+    color: '#DDA0DD',
+    marginBottom: 40,
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 300,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    // fontFamily: 'PixelatedFont',
+  },
+
+  button: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#6A5ACD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    // fontFamily: 'PixelatedFont',
+  },
+  linkText: {
+    color: '#E0B0FF',
+    marginTop: 20,
+    textDecorationLine: 'underline',
+    // fontFamily: 'PixelatedFont',
+  },
+});
