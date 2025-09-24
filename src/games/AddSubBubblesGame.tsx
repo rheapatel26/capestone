@@ -444,6 +444,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     minHeight: 40,
+    marginTop: -10,
   },
   trayBubble: {
     position: 'relative',
