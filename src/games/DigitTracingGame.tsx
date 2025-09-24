@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   title: {
       marginTop: 120,
       fontSize: 48,
-      fontWeight: '900', // Use a heavier font weight for a bold look
+      fontFamily: 'PixelFont',
       color: '#FFFFFF', // White text for high contrast
       textShadowColor: 'rgba(30, 83, 158, 0.7)', // Dark blue shadow
       textShadowOffset: { width: 2, height: 2 },
@@ -341,11 +341,11 @@ const styles = StyleSheet.create({
   },
   instructions: {
       fontSize: 18,
+      fontFamily: 'PixelFont',
       color: '#E0F7FA', // A very light, soft blue
       textAlign: 'center',
       paddingHorizontal: 20,
       marginBottom: 16,
-      fontWeight: '600',
       textShadowColor: 'rgba(30, 83, 158, 0.7)', // Matching dark blue shadow
       textShadowOffset: { width: 1, height: 1 },
       textShadowRadius: 3,
@@ -387,14 +387,14 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'PixelFont',
     fontSize: 18,
   },
   success: {
       marginTop: 20,
       fontSize: 22,
       color: '#FFD700', // A celebratory gold color
-      fontWeight: 'bold',
+      fontFamily: 'PixelFont',
       backgroundColor: 'rgba(25, 118, 210, 0.9)', // A matching blue background
       paddingVertical: 12,
       paddingHorizontal: 20,
@@ -409,6 +409,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+    fontFamily: 'PixelFont',
   },
   appleImage: {
     width: 17,

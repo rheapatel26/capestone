@@ -15,7 +15,7 @@ import { GameFlowManager } from '../utils/GameFlowManager';
 
 // ---------- ASSETS ----------
 const ASSETS = {
-  background: require('../../assets/bg1.gif'),
+  background: require('../../assets/clockgame_bg.png'),
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
@@ -216,7 +216,13 @@ export default function ClockTimeGame() {
 
   return (
     <View style={styles.container}>
-      <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} />
+      <Image 
+        source={ASSETS.background} 
+        style={[
+          StyleSheet.absoluteFillObject,
+          { width: '100%', height: '100%', resizeMode: 'stretch' }
+        ]} 
+      />
       <Text style={styles.question}>Set the clock to {target.hours}:{target.minutes.toString().padStart(2, '0')}</Text>
 
       <View style={styles.clockWrap}>
@@ -254,13 +260,20 @@ export default function ClockTimeGame() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center' },
-  question: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginTop: 40 },
+  question: {
+    fontSize: 22,
+    color: 'darkblue',
+    lineHeight: 40,
+    fontFamily: 'PixelFont',
+    textAlign: 'center',
+    marginTop: 180,
+  },
   clockWrap: { width: CLOCK_SIZE, height: CLOCK_SIZE, marginTop: 20, alignItems: 'center', justifyContent: 'center' },
   handWrap: { position: 'absolute', width: CLOCK_SIZE, height: CLOCK_SIZE, alignItems: 'center', justifyContent: 'flex-start' },
   hourHand: { width: CLOCK_SIZE * 0.22, height: CLOCK_SIZE * 0.35, resizeMode: 'contain', marginTop: CLOCK_SIZE * 0.15 },
   minuteHand: { width: CLOCK_SIZE * 0.16, height: CLOCK_SIZE * 0.45, resizeMode: 'contain', marginTop: CLOCK_SIZE * 0.05 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-evenly', width: '100%', position: 'absolute', bottom: 30 },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-evenly', width: '80%', position: 'absolute', bottom: 30, backgroundColor:'#ebebf8b0', borderRadius:5 },
   icon: { width: 50, height: 50 },
-  overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },
+  overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10},
   overlayImage: { width: 150, height: 150, resizeMode: 'contain' },
 });

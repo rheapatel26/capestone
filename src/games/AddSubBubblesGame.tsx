@@ -398,16 +398,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   problemText: {
-    fontSize: Platform.OS === 'web' ? 36 : 28,
+    fontSize: 24,
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'PixelFont',
     textAlign: 'center',
+    marginBottom: 10,
   },
   instructionText: {
-    fontSize: Platform.OS === 'web' ? 20 : 16,
-    color: '#FFD166',
+    fontSize: 16,
+    color: '#fff',
+    fontFamily: 'PixelFont',
     textAlign: 'center',
-    marginTop: 10,
+    marginBottom: 20,
   },
   trayContainer: {
     position: 'absolute',
@@ -423,7 +425,7 @@ const styles = StyleSheet.create({
   trayLabel: {
     fontSize: 18,
     color: '#FFD166',
-    fontWeight: 'bold',
+    fontFamily: 'PixelFont',
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -450,10 +452,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   resultText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
-    zIndex: 1,
+    fontSize: 20,
+    color: '#FFD166',
+    fontFamily: 'PixelFont',
+    textAlign: 'center',
   },
   availableContainer: {
     position: 'absolute',
@@ -466,7 +468,7 @@ const styles = StyleSheet.create({
   availableLabel: {
     fontSize: 18,
     color: '#FFD166',
-    fontWeight: 'bold',
+    fontFamily: 'PixelFont',
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -484,13 +486,10 @@ const styles = StyleSheet.create({
     height: 50,
   },
   bubbleValue: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -8 }, { translateY: -10 }],
-    fontSize: 16,
+    fontSize: 18,
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'PixelFont',
+    textAlign: 'center',
   },
   buttonRow: {
     position: 'absolute',
