@@ -101,74 +101,11 @@ const GameReportCard = ({ gameStat }: { gameStat: GameStat }) => {
 };
 
 // --- Main Profile Screen Component ---
-export default function ProfileScreen() {
-  const { user, logout, refreshUser } = useUser();
-
-  // Since authentication is now handled at app level, user should always exist here
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Loading...</Text>
-      </View>
-    );
-  }
-
-  // Calculate stats from backend user data
-  const gameStats = calculateGameStats(user);
-  const totalGamesPlayed = gameStats.length;
-  const totalIndependent = gameStats.reduce((sum, game) => sum + game.independentSolutions, 0);
-  const totalWithHints = gameStats.reduce((sum, game) => sum + game.hintSolutions, 0);
-  const totalNeedsPractice = gameStats.reduce((sum, game) => sum + game.needsPractice, 0);
-  const totalProblemsAttempted = totalIndependent + totalWithHints + totalNeedsPractice;
-  const totalSolutions = totalIndependent + totalWithHints;
-  const independenceRate = totalSolutions > 0 ? Math.round((totalIndependent / totalSolutions) * 100) : 0;
-
-  return (
-    <ImageBackground
-      source={require('../../assets/ui/profile-bg.png')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
-      {/* Overlay to make text readable */}
-      <View style={styles.overlay}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>{stats.userName}'s Learning Journey</Text>
-          <View style={styles.dateContainer}>
-            <MaterialCommunityIcons name="calendar-blank" size={16} color="#4D8080" />
-            <Text style={styles.subtitle}>Last active: {stats.lastActive}</Text>
-          </View>
-          
-          {/* Overall Stats */}
-          <View style={[styles.card, styles.overallStatsCard]}>
-            <StatBox icon="book-open-variant" label="Games Played" value={totalGamesPlayed} />
-            <StatBox icon="target" label="Problems Attempted" value={totalProblemsAttempted} />
-            <StatBox icon="trending-up" label="Independence" value={`${independenceRate}%`} />
-          </View>
-          
-          {/* Breakdown Card */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Learning Independence Breakdown</Text>
-            <BreakdownRow color="#f9a825" label="Independent Solutions" value={totalIndependent} />
-            <BreakdownRow color="#4caf50" label="With Hints" value={totalWithHints} />
-            <BreakdownRow color="#ef5350" label="Needs More Practice" value={totalNeedsPractice} />
-          </View>
-
-          {/* Game-by-Game Reports Title */}
-          <Text style={styles.reportsTitle}>Game-by-Game Reports</Text>
-          {allGameStats.map(gameStat => (
-            <GameReportCard key={gameStat.gameId} gameStat={gameStat} />
-          ))}
-        </ScrollView>
-      </View>
-    </ImageBackground>
-  );
-}
-
 // Function to calculate game statistics from backend user data
 function calculateGameStats(user: any): GameStat[] {
   const gameMapping = {
     'Game1': 'Bubble Counting',
-    'Game2': 'Digit Tracing',
+    'Game2': 'Digit Tracing', 
     'Game3': 'Clock Time',
     'Game4': 'Money Concept',
     'Game5': 'Add/Sub Bubbles',
@@ -226,8 +163,77 @@ function calculateGameStats(user: any): GameStat[] {
   return gameStats;
 }
 
+export default function ProfileScreen() {
+  const { user, logout, refreshUser } = useUser();
+
+  // Since authentication is now handled at app level, user should always exist here
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Calculate stats from backend user data
+  const gameStats = calculateGameStats(user);
+  const totalGamesPlayed = gameStats.length;
+  const totalIndependent = gameStats.reduce((sum, game) => sum + game.independentSolutions, 0);
+  const totalWithHints = gameStats.reduce((sum, game) => sum + game.hintSolutions, 0);
+  const totalNeedsPractice = gameStats.reduce((sum, game) => sum + game.needsPractice, 0);
+  const totalProblemsAttempted = totalIndependent + totalWithHints + totalNeedsPractice;
+  const totalSolutions = totalIndependent + totalWithHints;
+  const independenceRate = totalSolutions > 0 ? Math.round((totalIndependent / totalSolutions) * 100) : 0;
+
+  return (
+    <ImageBackground
+      source={require('../../assets/ui/profile-bg.png')}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      {/* Overlay to make text readable */}
+      <View style={styles.overlay}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.title}>{user.username}'s Learning Journey</Text>
+          <View style={styles.dateContainer}>
+            <MaterialCommunityIcons name="calendar-blank" size={16} color="#4D8080" />
+            <Text style={styles.subtitle}>Last active: Today</Text>
+          </View>
+          
+          {/* Overall Stats */}
+          <View style={[styles.card, styles.overallStatsCard]}>
+            <StatBox icon="book-open-variant" label="Games Played" value={totalGamesPlayed} />
+            <StatBox icon="target" label="Problems Attempted" value={totalProblemsAttempted} />
+            <StatBox icon="trending-up" label="Independence" value={`${independenceRate}%`} />
+          </View>
+          
+          {/* Breakdown Card */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Learning Independence Breakdown</Text>
+            <BreakdownRow color="#f9a825" label="Independent Solutions" value={totalIndependent} />
+            <BreakdownRow color="#4caf50" label="With Hints" value={totalWithHints} />
+            <BreakdownRow color="#ef5350" label="Needs More Practice" value={totalNeedsPractice} />
+          </View>
+
+          {/* Game-by-Game Reports Title */}
+          <Text style={styles.reportsTitle}>Game-by-Game Reports</Text>
+          {gameStats.map((gameStat: GameStat) => (
+            <GameReportCard key={gameStat.gameId} gameStat={gameStat} />
+          ))}
+        </ScrollView>
+      </View>
+    </ImageBackground>
+  );
+}
+
 // --- NEW STYLESHEET (Dashboard Theme Applied) ---
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
   bg: {
     flex: 1,
     width: '100%',

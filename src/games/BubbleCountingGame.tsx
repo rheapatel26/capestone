@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image'; // For GIF playback
 import { GameFlowManager } from '../utils/GameFlowManager';
+import { useUser } from '../context/UserContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,20 +26,34 @@ const ASSETS = {
 const numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 export default function BubbleCountingGame() {
+  const { user, isAuthenticated } = useUser();
   const [target, setTarget] = useState(0);
   const [bubbles, setBubbles] = useState<{ id: number, popped: boolean, highlighted: boolean, x: number, y: number, colorIndex: number }[]>([]);
   const [poppedCount, setPoppedCount] = useState(0);
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [showIncorrect, setShowIncorrect] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(1);
 
-  const managerRef = useRef(new GameFlowManager()).current;
+  const managerRef = useRef<GameFlowManager | null>(null);
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Initialize GameFlowManager with user data if authenticated
+    if (isAuthenticated && user) {
+      managerRef.current = new GameFlowManager({
+        username: user.username,
+        gameName: 'Game1', // BubbleCountingGame is Game1
+        levelName: `level${currentLevel}`,
+      });
+    } else {
+      // Create without config for non-authenticated users
+      managerRef.current = new GameFlowManager();
+    }
+
     startNewProblem();
-  }, []);
+  }, [user, isAuthenticated, currentLevel]);
 
   useEffect(() => {
     Animated.loop(
@@ -53,7 +68,7 @@ export default function BubbleCountingGame() {
     const newTarget = Math.floor(Math.random() * 10);
     setTarget(newTarget);
     setPoppedCount(0);
-    managerRef.resetLevel();
+    managerRef.current?.resetLevel();
 
     const bubbleCount = newTarget + Math.floor(Math.random() * 6) + 3;
     //   const newBubbles = Array.from({ length: bubbleCount }, (_, i) => ({
@@ -94,9 +109,15 @@ export default function BubbleCountingGame() {
 
   function checkAnswer() {
     const correct = poppedCount === target;
-    managerRef.recordAttempt(correct);
+    managerRef.current?.recordAttempt(correct);
 
     if (correct) {
+      // Sync with backend if authenticated
+      if (isAuthenticated && managerRef.current) {
+        managerRef.current.syncWithBackend().catch(err => 
+          console.error('Failed to sync progress:', err)
+        );
+      }
       triggerCelebrate();
     } else {
       triggerIncorrect();
@@ -127,13 +148,15 @@ export default function BubbleCountingGame() {
   }
 
   function showHint() {
-    managerRef.updateHints();
-    if (managerRef.hintLevel === 0) return;
+    if (!managerRef.current) return;
+    
+    managerRef.current.updateHints();
+    if (managerRef.current.hintLevel === 0) return;
 
     setBubbles(prev => {
       let highlightCount = 0;
       return prev.map(b => {
-        if (!b.popped && highlightCount < managerRef.hintLevel && highlightCount < target) {
+        if (!b.popped && highlightCount < (managerRef.current?.hintLevel || 0) && highlightCount < target) {
           highlightCount++;
           return { ...b, highlighted: true };
         }
@@ -143,8 +166,10 @@ export default function BubbleCountingGame() {
   }
 
   function playSolutionAnimation() {
-    managerRef.hintLevel = 3;
-    managerRef.status = 'dependent';
+    if (!managerRef.current) return;
+    
+    managerRef.current.hintLevel = 3;
+    managerRef.current.status = 'dependent';
 
     let delay = 0;
     bubbles.forEach((bubble, index) => {

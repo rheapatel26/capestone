@@ -9,14 +9,14 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-// import { Video } from "expo-av";
 import { Video, ResizeMode } from 'expo-av';
-
+import { useUser } from '../context/UserContext';
 
 // Define the types for your authentication stack
 type AuthStackParamList = {
   SignIn: undefined;
   SignUP: undefined;
+  MainTabs: undefined;
 };
 
 type SignInNavProp = NativeStackNavigationProp<AuthStackParamList, "SignIn">;
@@ -27,13 +27,28 @@ const ASSETS = {
 
 export default function SignInScreen() {
   const navigation = useNavigation<SignInNavProp>();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const videoRef = useRef<Video>(null);
+  
+  const { signIn, isLoading, error } = useUser();
 
-  const handleSignIn = () => {
-    console.log("Signing in with:", email, password);
-    Alert.alert("Sign In", "Sign in functionality not yet implemented.");
+  const handleSignIn = async () => {
+    if (!username.trim() || !password.trim()) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    try {
+      await signIn({ username: username.trim(), password: password.trim() });
+      // Navigate to main app on successful sign in
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
+    } catch (error) {
+      Alert.alert("Sign In Failed", "Invalid username or password");
+    }
   };
 
   return (
@@ -56,10 +71,12 @@ export default function SignInScreen() {
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Username"
           placeholderTextColor="#A0A0A0"
-          value={email}
-          onChangeText={setEmail}
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
         <TextInput
           style={styles.input}
@@ -68,10 +85,22 @@ export default function SignInScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoCapitalize="none"
         />
-        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-          <Text style={styles.buttonText}>Log In</Text>
+        
+        <TouchableOpacity 
+          style={[styles.button, isLoading && styles.buttonDisabled]} 
+          onPress={handleSignIn}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </Text>
         </TouchableOpacity>
+        
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate("SignUP")}>
@@ -130,6 +159,19 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontSize: 18,
+    fontWeight: "bold",
+  },
+  buttonDisabled: {
+    backgroundColor: "#999",
+  },
+  errorText: {
+    color: "#ff4444",
+    marginTop: 10,
+    textAlign: 'center',
+    fontSize: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 8,
+    borderRadius: 4,
   },
   linkText: {
     color: "#E0B0FF",
