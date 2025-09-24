@@ -110,11 +110,11 @@ export default function ClockTimeGame() {
     let minute = 0;
 
     if (levelSpec.minuteOptions === 'hourOnly') {
-    minute = 0;
+      minute = 0;
     } else if (levelSpec.minuteOptions === 'all') {
-    minute = Math.floor(Math.random() * 12) * 5;
+      minute = Math.floor(Math.random() * 12) * 5;
     } else if (Array.isArray(levelSpec.minuteOptions)) {
-    minute = levelSpec.minuteOptions[Math.floor(Math.random() * levelSpec.minuteOptions.length)];
+      minute = levelSpec.minuteOptions[Math.floor(Math.random() * levelSpec.minuteOptions.length)];
     }
 
     setTarget({ hours: hour, minutes: minute });
@@ -216,12 +216,12 @@ export default function ClockTimeGame() {
 
   return (
     <View style={styles.container}>
-      <Image 
-        source={ASSETS.background} 
+      <Image
+        source={ASSETS.background}
         style={[
           StyleSheet.absoluteFillObject,
           { width: '100%', height: '100%', resizeMode: 'stretch' }
-        ]} 
+        ]}
       />
       <Text style={styles.question}>Set the clock to {target.hours}:{target.minutes.toString().padStart(2, '0')}</Text>
 
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
   handWrap: { position: 'absolute', width: CLOCK_SIZE, height: CLOCK_SIZE, alignItems: 'center', justifyContent: 'flex-start' },
   hourHand: { width: CLOCK_SIZE * 0.22, height: CLOCK_SIZE * 0.35, resizeMode: 'contain', marginTop: CLOCK_SIZE * 0.15 },
   minuteHand: { width: CLOCK_SIZE * 0.16, height: CLOCK_SIZE * 0.45, resizeMode: 'contain', marginTop: CLOCK_SIZE * 0.05 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-evenly', width: '80%', position: 'absolute', bottom: 30, backgroundColor:'#ebebf8b0', borderRadius:5 },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-evenly', width: '100%', position: 'absolute', bottom: 0, backgroundColor: 'rgba(246, 203, 85, 0.8)', borderRadius: 5, padding:14 },
   icon: { width: 50, height: 50 },
-  overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10},
+  overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },
   overlayImage: { width: 150, height: 150, resizeMode: 'contain' },
 });

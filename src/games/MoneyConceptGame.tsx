@@ -16,12 +16,12 @@ const { width } = Dimensions.get('window');
 
 // ---------- SHARED ASSETS (same paths as your other games) ----------
 const ASSETS = {
-  background: require('../../assets/ui/dark_bg.jpg'),
+  background: require('../../assets/ui/moneygame_bg.png'),
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
   submit: require('../../assets/ui/icon_submit.png'),
-  celebrate: require('../../assets/ui/icon-confetti.gif'),
+  celebrate: require('../../assets/ui/Confetti.gif'),
   incorrect: require('../../assets/ui/icon_wrong.gif'),
 };
 
@@ -255,11 +255,19 @@ export default function MoneyConceptGame() {
 
   return (
     <View style={styles.container}>
-      <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      {/* <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" /> */}
+
+      <Image
+        source={ASSETS.background}
+        style={[
+          StyleSheet.absoluteFillObject,
+          { width: '100%', height: '100%', resizeMode: 'stretch' }
+        ]}
+      />
 
       {/* Header / Question */}
       <View style={styles.header}>
-        <Text style={styles.levelTitle}>Money Concept — Level {level.id}</Text>
+        <Text style={styles.levelTitle }>Level {level.id}</Text>
         <Text style={styles.question}>
           {item
             ? `Pay for ${item.name}: ${formatRs(target)}`
@@ -276,21 +284,11 @@ export default function MoneyConceptGame() {
 
       {/* Selected Tray + Total */}
       <View style={styles.selectedTray}>
-        <Text style={styles.totalText}>Total: {formatRs(total)} / {formatRs(target)}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectedRow}>
-          {selected.map((den, idx) => {
-            const isC = isCoin(den);
-            const src = isC ? COIN_IMGS[den] : NOTE_IMGS[den];
-            return (
-              <Image
-                key={`${den}-${idx}`}
-                source={src}
-                style={isC ? styles.coinPicked : styles.notePicked}
-                resizeMode="contain"
-              />
-            );
-          })}
-        </ScrollView>
+        <Text style={styles.totalText}>Total:    {formatRs(total)} / {formatRs(target)}</Text>
+      </View>
+
+      <View style={styles.selectedTray}>
+        <Text style={styles.totalText2}>    {formatRs(total)} </Text>
       </View>
 
       {/* Selection Tray */}
@@ -309,7 +307,9 @@ export default function MoneyConceptGame() {
                 </TouchableOpacity>
               );
             })}
+
           </View>
+
         )}
         {/* Notes */}
         {!!notePool.length && (
@@ -327,6 +327,24 @@ export default function MoneyConceptGame() {
             })}
           </View>
         )}
+
+      </View>
+
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.selectedRow}>
+          {selected.map((den, idx) => {
+            const isC = isCoin(den);
+            const src = isC ? COIN_IMGS[den] : NOTE_IMGS[den];
+            return (
+              <Image
+                key={`${den}-${idx}`}
+                source={src}
+                style={isC ? styles.coinPicked : styles.notePicked}
+                resizeMode="contain"
+              />
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Controls */}
@@ -364,48 +382,83 @@ export default function MoneyConceptGame() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { marginTop: 36, alignItems: 'center' },
-  levelTitle: { color: '#fff', fontSize: 14, marginBottom: 6, fontFamily: 'PixelFont' },
-  question: { color: '#fff', fontSize: 22, fontWeight: 'bold', fontFamily: 'PixelFont' },
+  levelTitle: { color: '#2a1500ff', fontSize: 16 , fontFamily: 'PixelFont', left: -140 , marginTop: 10},
+  question: { color: '#ff8000ff', fontSize: 22, fontWeight: 'bold', fontFamily: 'PixelFont', top: 80 },
 
   itemWrap: { alignItems: 'center', marginTop: 10 },
-  itemImg: { width: 90, height: 90, resizeMode: 'contain' },
+  itemImg: { width: 90, height: 90, resizeMode: 'contain', top: 70 },
 
-  selectedTray: {
-    marginTop: 12,
-    marginHorizontal: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: 10,
+  trayContainer: {
+    position: 'absolute',
+    bottom: 150, // adjust distance from bottom
+    width: '100%',
+    alignItems: 'center',
   },
-  totalText: { color: '#FFD166', fontSize: 18, marginBottom: 8, textAlign: 'center', fontFamily: 'PixelFont' },
-  selectedRow: { alignItems: 'center' },
 
   tray: {
-    position: 'absolute',
-    bottom: 110,
+    marginTop: -10,
     width: '100%',
     paddingHorizontal: 12,
+    // backgroundColor: 'rgba(21, 2, 2, 0.25)',
   },
+
   trayRow: {
+    marginTop: 8,
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    marginVertical: 6,
+    marginVertical: 2,
+    // backgroundColor: 'rgba(21, 2, 2, 0.25)',
   },
+
+  selectedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    top: 10,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+    
+    // backgroundColor: 'rgba(255, 0, 0, 0.25)',
+  },
+
   pickWrap: { alignItems: 'center' },
   highlight: {
     transform: [{ scale: 1.1 }],
-    shadowColor: '#FFD166',
+    shadowColor: '#ff8000ff',
     shadowOpacity: 0.9,
     shadowRadius: 8,
   },
 
+  totalText: {
+    color: '#ff8000ff', fontSize: 20,
+    marginTop: 10,
+    left: 16,
+    textAlign: 'center',
+    fontFamily: 'PixelFont',
+    lineHeight: 40
+  },
+  totalText2:{
+    color: '#ff8000ff', fontSize: 28,
+    marginTop: -30,
+    position: 'absolute',
+    left: -190,
+    textAlign: 'center',
+    fontFamily: 'PixelFont',
+    lineHeight: 40
+  },
+  selectedTray: {
+    alignItems: 'center',
+    marginHorizontal: 100,
+    paddingVertical: 1,
+    top: 300,
+    left: 65,
+    // backgroundColor: 'rgba(21, 2, 2, 0.25)'
+  },
   coin: { width: 60, height: 60 },
   note: { width: 100, height: 50 },
 
   coinPicked: { width: 48, height: 48, marginRight: 6 },
   notePicked: { width: 80, height: 40, marginRight: 6 },
-  pickLabel: { color: '#fff', fontSize: 12, marginTop: 4, textAlign: 'center', fontFamily: 'PixelFont' },
+  pickLabel: { color: '#ffd500ff', fontSize: 12, marginTop: 4, textAlign: 'center', fontFamily: 'PixelFont'},
 
   buttonRow: {
     position: 'absolute',

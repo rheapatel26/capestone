@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
 
-// --- Type Definitions for our data (This fixes the TypeScript error) ---
+// --- Type Definitions for our data ---
 interface GameStat {
   gameId: string;
   gameName: string;
@@ -18,11 +18,10 @@ interface GameStat {
 interface UserStats {
   userName: string;
   lastActive: string;
-  statsByGame: Record<string, GameStat>; // The Record<string, ...> is the index signature
+  statsByGame: Record<string, GameStat>;
 }
 
 // --- HARDCODED DATA OBJECT ---
-// This object now conforms to the UserStats interface we defined above.
 const hardcodedStats: UserStats = {
   userName: "Anshu",
   lastActive: "8/15/2025",
@@ -32,7 +31,7 @@ const hardcodedStats: UserStats = {
       gameName: 'Money Game',
       attempts: 7,
       currentLevel: 1,
-      maxLevel: 5,
+      maxLevel: 5,  
       independentSolutions: 7,
       hintSolutions: 0,
       needsPractice: 0,
@@ -51,7 +50,6 @@ const hardcodedStats: UserStats = {
 };
 
 // --- Reusable Components ---
-
 const StatBox = ({ icon, label, value }: { icon: any; label:string; value: string | number }) => (
   <View style={styles.statBox}>
     <MaterialCommunityIcons name={icon} size={28} color="#4D8080" />
@@ -68,7 +66,6 @@ const BreakdownRow = ({ color, label, value }: { color: string; label: string; v
   </View>
 );
 
-// The prop 'gameStat' is now correctly typed as GameStat
 const GameReportCard = ({ gameStat }: { gameStat: GameStat }) => {
   const progress = (gameStat.currentLevel - 1) / gameStat.maxLevel;
 
@@ -127,51 +124,43 @@ export default function ProfileScreen() {
   const independenceRate = totalSolutions > 0 ? Math.round((totalIndependent / totalSolutions) * 100) : 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{user.username}'s Learning Journey</Text>
-        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <TouchableOpacity onPress={refreshUser} style={styles.refreshButton}>
-        <MaterialCommunityIcons name="refresh" size={20} color="#4D8080" />
-        <Text style={styles.refreshText}>Refresh Data</Text>
-      </TouchableOpacity>
-      
-      {/* Overall Stats */}
-      <View style={[styles.card, styles.overallStatsCard]}>
-        <StatBox icon="book-open-variant" label="Games Played" value={totalGamesPlayed} />
-        <StatBox icon="target" label="Problems Attempted" value={totalProblemsAttempted} />
-        <StatBox icon="trending-up" label="Independence" value={`${independenceRate}%`} />
-      </View>
-      
-      {/* Levels Completed */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Levels Completed</Text>
-        {Object.entries(user.levels_completed).map(([game, levels]) => (
-          <View key={game} style={styles.levelRow}>
-            <Text style={styles.levelGame}>{game}</Text>
-            <Text style={styles.levelCount}>{levels} levels</Text>
+    <ImageBackground
+      source={require('../../assets/ui/profile-bg.png')}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      {/* Overlay to make text readable */}
+      <View style={styles.overlay}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.title}>{stats.userName}'s Learning Journey</Text>
+          <View style={styles.dateContainer}>
+            <MaterialCommunityIcons name="calendar-blank" size={16} color="#4D8080" />
+            <Text style={styles.subtitle}>Last active: {stats.lastActive}</Text>
           </View>
-        ))}
-      </View>
-      
-      {/* Breakdown Card */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Learning Independence Breakdown</Text>
-        <BreakdownRow color="#f9a825" label="Independent Solutions" value={totalIndependent} />
-        <BreakdownRow color="#4caf50" label="With Hints" value={totalWithHints} />
-        <BreakdownRow color="#ef5350" label="Needs More Practice" value={totalNeedsPractice} />
-      </View>
+          
+          {/* Overall Stats */}
+          <View style={[styles.card, styles.overallStatsCard]}>
+            <StatBox icon="book-open-variant" label="Games Played" value={totalGamesPlayed} />
+            <StatBox icon="target" label="Problems Attempted" value={totalProblemsAttempted} />
+            <StatBox icon="trending-up" label="Independence" value={`${independenceRate}%`} />
+          </View>
+          
+          {/* Breakdown Card */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Learning Independence Breakdown</Text>
+            <BreakdownRow color="#f9a825" label="Independent Solutions" value={totalIndependent} />
+            <BreakdownRow color="#4caf50" label="With Hints" value={totalWithHints} />
+            <BreakdownRow color="#ef5350" label="Needs More Practice" value={totalNeedsPractice} />
+          </View>
 
-      {/* Game-by-Game Reports */}
-      <Text style={styles.reportsTitle}>Game-by-Game Reports</Text>
-      {gameStats.map(gameStat => (
-        <GameReportCard key={gameStat.gameId} gameStat={gameStat} />
-      ))}
-    </ScrollView>
+          {/* Game-by-Game Reports Title */}
+          <Text style={styles.reportsTitle}>Game-by-Game Reports</Text>
+          {allGameStats.map(gameStat => (
+            <GameReportCard key={gameStat.gameId} gameStat={gameStat} />
+          ))}
+        </ScrollView>
+      </View>
+    </ImageBackground>
   );
 }
 
@@ -239,9 +228,14 @@ function calculateGameStats(user: any): GameStat[] {
 
 // --- NEW STYLESHEET (Dashboard Theme Applied) ---
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#E0EFFF', // Palette: Soft Powder Blue background
+  bg: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(224, 239, 255, 0)', // translucent overlay
   },
   scrollContent: { 
     padding: 16, 
@@ -250,7 +244,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#4D8080', // Palette: Muted Teal for text
+    color: '#4D8080',
     textAlign: 'center',
     marginTop: 60,
   },
@@ -275,7 +269,6 @@ const styles = StyleSheet.create({
     marginBottom: 10, 
     paddingLeft: 4 
   },
-  
   card: { 
     backgroundColor: '#FFFFFF', 
     borderRadius: 20,
@@ -291,145 +284,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  statBox: { 
-    flex: 1, 
-    alignItems: 'center',
-  },
-  statValue: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    color: '#4D8080', 
-    marginTop: 8 
-  },
-  statLabel: { 
-    fontSize: 12, 
-    color: '#4D8080', 
-    textAlign: 'center', 
-    marginTop: 4 
-  },
-  
-  gameTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: '#4D8080' 
-  },
-  levelText: { 
-    fontSize: 14, 
-    color: '#5f8a8a', 
-    marginBottom: 16 
-  },
-  sectionTitle: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: '#4D8080', 
-    marginBottom: 12,
-  },
-  
-  progressBarBackground: { 
-    height: 8, 
-    backgroundColor: '#cce0e0', 
-    borderRadius: 4, 
-    overflow: 'hidden', 
-    marginBottom: 16 
-  },
-  progressBarFill: { 
-    height: '100%', 
-    backgroundColor: '#4D8080', 
-    borderRadius: 4 
-  },
-  
-  miniStatsRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-around', 
-    marginBottom: 16, 
-    backgroundColor: '#f7fafa', 
-    borderRadius: 8, 
-    paddingVertical: 12 
-  },
-  miniStat: { 
-    alignItems: 'center', 
-    flex: 1 
-  },
-  miniStatValue: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: '#4D8080' 
-  },
-  miniStatLabel: { 
-    fontSize: 12, 
-    color: '#5f8a8a', 
-    marginTop: 2 
-  },
-  
-  breakdownRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 10 
-  },
-  dot: { 
-    width: 12, 
-    height: 12, 
-    borderRadius: 6, 
-    marginRight: 12 
-  },
-  breakdownLabel: { 
-    flex: 1, 
-    fontSize: 14, 
-    color: '#4D8080' 
-  },
-  breakdownValue: { 
-    fontSize: 14, 
-    fontWeight: 'bold', 
-    color: '#4D8080' 
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logoutButton: {
-    backgroundColor: '#ef5350',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  logoutText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  refreshButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f0f8ff',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  refreshText: {
-    color: '#4D8080',
-    marginLeft: 8,
-    fontWeight: '600',
-  },
-  levelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  levelGame: {
-    fontSize: 14,
-    color: '#4D8080',
-    fontWeight: '600',
-  },
-  levelCount: {
-    fontSize: 14,
-    color: '#5f8a8a',
-    fontWeight: 'bold',
-  },
+  statBox: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 22, fontWeight: 'bold', color: '#4D8080', marginTop: 8 },
+  statLabel: { fontSize: 12, color: '#4D8080', textAlign: 'center', marginTop: 4 },
+  gameTitle: { fontSize: 18, fontWeight: 'bold', color: '#4D8080' },
+  levelText: { fontSize: 14, color: '#5f8a8a', marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#4D8080', marginBottom: 12 },
+  progressBarBackground: { height: 8, backgroundColor: '#cce0e0', borderRadius: 4, overflow: 'hidden', marginBottom: 16 },
+  progressBarFill: { height: '100%', backgroundColor: '#4D8080', borderRadius: 4 },
+  miniStatsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16, backgroundColor: '#f7fafa', borderRadius: 8, paddingVertical: 12 },
+  miniStat: { alignItems: 'center', flex: 1 },
+  miniStatValue: { fontSize: 18, fontWeight: 'bold', color: '#4D8080' },
+  miniStatLabel: { fontSize: 12, color: '#5f8a8a', marginTop: 2 },
+  breakdownRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  dot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
+  breakdownLabel: { flex: 1, fontSize: 14, color: '#4D8080' },
+  breakdownValue: { fontSize: 14, fontWeight: 'bold', color: '#4D8080' },
 });
-

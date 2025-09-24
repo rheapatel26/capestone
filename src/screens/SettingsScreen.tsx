@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // A reusable component for each setting row
@@ -16,16 +16,11 @@ const SettingRow = ({ icon, label, value, onValueChange }: { icon: any; label: s
   </View>
 );
 
-
 export default function SettingsScreen() {
-  // --- State Management for Settings ---
-  // In a real app, you would lift this state into a global context (like StatsContext)
-  // so that other parts of the app can respect these settings.
   const [isMusicEnabled, setIsMusicEnabled] = useState(true);
   const [isSfxEnabled, setIsSfxEnabled] = useState(true);
   const [isTextToSpeechEnabled, setIsTextToSpeechEnabled] = useState(false);
 
-  // --- Functions ---
   const handleResetPress = () => {
     Alert.alert(
       "Reset All Progress?",
@@ -36,8 +31,6 @@ export default function SettingsScreen() {
           text: "Reset", 
           style: "destructive", 
           onPress: () => {
-            // In a real app, you would call a function from your StatsContext here
-            // e.g., stats.resetAllData();
             console.log("User progress has been reset.");
             Alert.alert("Progress Reset", "All your game data has been cleared.");
           }
@@ -47,61 +40,72 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.title}>Settings</Text>
+    <ImageBackground
+      source={require('../../assets/ui/profile-bg.png')}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Settings</Text>
 
-      {/* --- Sound & Music Card --- */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Sound & Music</Text>
-        <SettingRow
-          icon="music-note"
-          label="Game Music"
-          value={isMusicEnabled}
-          onValueChange={setIsMusicEnabled}
-        />
-        <View style={styles.divider} />
-        <SettingRow
-          icon="volume-high"
-          label="Sound Effects"
-          value={isSfxEnabled}
-          onValueChange={setIsSfxEnabled}
-        />
-      </View>
+        {/* --- Sound & Music Card --- */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Sound & Music</Text>
+          <SettingRow
+            icon="music-note"
+            label="Game Music"
+            value={isMusicEnabled}
+            onValueChange={setIsMusicEnabled}
+          />
+          <View style={styles.divider} />
+          <SettingRow
+            icon="volume-high"
+            label="Sound Effects"
+            value={isSfxEnabled}
+            onValueChange={setIsSfxEnabled}
+          />
+        </View>
 
-      {/* --- Accessibility Card --- */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Accessibility</Text>
-        <SettingRow
-          icon="text-to-speech"
-          label="Read Instructions Aloud"
-          value={isTextToSpeechEnabled}
-          onValueChange={setIsTextToSpeechEnabled}
-        />
-      </View>
+        {/* --- Accessibility Card --- */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Accessibility</Text>
+          <SettingRow
+            icon="text-to-speech"
+            label="Read Instructions Aloud"
+            value={isTextToSpeechEnabled}
+            onValueChange={setIsTextToSpeechEnabled}
+          />
+        </View>
 
-      {/* --- Data Management Card --- */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Data Management</Text>
-        <TouchableOpacity style={styles.resetButton} onPress={handleResetPress} activeOpacity={0.7}>
-          <MaterialCommunityIcons name="delete-restore" size={20} color="#c62828" />
-          <Text style={styles.resetButtonText}>Reset All Progress</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* --- About Section --- */}
-      <View style={styles.aboutContainer}>
-          <Text style={styles.aboutText}>Learning App - Version 1.0.0</Text>
-          <Text style={styles.aboutLink}>Privacy Policy</Text>
-      </View>
-    </ScrollView>
+        {/* --- Data Management Card --- */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Data Management</Text>
+          <TouchableOpacity style={styles.resetButton} onPress={handleResetPress} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="delete-restore" size={20} color="#c62828" />
+            <Text style={styles.resetButtonText}>Reset All Progress</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* --- About Section --- */}
+        <View style={styles.aboutContainer}>
+            <Text style={styles.aboutText}>Learning App - Version 1.0.0</Text>
+            <Text style={styles.aboutLink}>Privacy Policy</Text>
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
-// --- STYLESHEET (Using the "Calm Sea and Sky" theme) ---
+// --- STYLESHEET ---
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: { 
     flex: 1, 
-    backgroundColor: '#E0EFFF', // Soft Powder Blue background
+    backgroundColor: 'transparent', // transparent to show bg
   },
   scrollContent: {
     padding: 16,
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: 'bold',
-    color: '#4D8080', // Muted Teal for text
+    color: '#4D8080',
     textAlign: 'center',
     marginBottom: 30,
   },

@@ -11,7 +11,8 @@ import { UserProvider, useUser } from './src/context/UserContext';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import LoginScreen from './src/screens/LoginScreen';
+import SignInScreen from './src/screens/SignInScreen';
+import SignUPScreen from './src/screens/SignUPScreen';
 
 // Games
 import DigitTracingGame from './src/games/DigitTracingGame';
@@ -23,16 +24,15 @@ import MoneyConceptGame from './src/games/MoneyConceptGame';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Bottom Tab with Dashboard, Profile, Settings
+// Bottom Tab Navigator (used after login)
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: false, // ✅ hides only the TOP nav bar, keeps bottom tabs
         tabBarStyle: { backgroundColor: '#222', height: 60 },
         tabBarActiveTintColor: '#FFD166',
         tabBarInactiveTintColor: '#aaa',
-        tabBarLabelStyle: { fontFamily: 'PixelFont', fontSize: 7, fontWeight: '100'},
       }}
     >
       <Tab.Screen
@@ -40,7 +40,10 @@ function MainTabs() {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ size }) => (
-            <Image source={require('./assets/icons/icon_home.png')} style={{ width: size, height: size }} />
+            <Image 
+              source={require('./assets/icons/icon_home.png')} 
+              style={{ width: size, height: size }} 
+            />
           ),
         }}
       />
@@ -49,7 +52,10 @@ function MainTabs() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ size }) => (
-            <Image source={require('./assets/icons/icon_user.png')} style={{ width: size, height: size }} />
+            <Image 
+              source={require('./assets/icons/icon_user.png')} 
+              style={{ width: size, height: size }} 
+            />
           ),
         }}
       />
@@ -58,7 +64,10 @@ function MainTabs() {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ size }) => (
-            <Image source={require('./assets/icons/icon_settings.png')} style={{ width: size, height: size }} />
+            <Image 
+              source={require('./assets/icons/icon_settings.png')} 
+              style={{ width: size, height: size }} 
+            />
           ),
         }}
       />
@@ -66,6 +75,8 @@ function MainTabs() {
   );
 }
 
+// Main App Component with simple linear navigation
+export default function App() {
 // Component that handles authentication flow
 function AppContent() {
   const { user } = useUser();
@@ -78,8 +89,18 @@ function AppContent() {
   // If user is logged in, show main app
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator 
+        initialRouteName="SignIn"
+        screenOptions={{ headerShown: false }} // ✅ hides TOP nav bar everywhere
+      >
+        {/* Auth Screens */}
+        <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="SignUP" component={SignUPScreen} />
+        
+        {/* Main App Screens */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        
+        {/* Game Screens */}
         <Stack.Screen name="DigitTracingGame" component={DigitTracingGame} />
         <Stack.Screen name="ClockTimeGame" component={ClockTimeGame} />
         <Stack.Screen name="BubbleCountingGame" component={BubbleCountingGame} />
@@ -89,17 +110,3 @@ function AppContent() {
     </NavigationContainer>
   );
 }
-
-export default function App() {
-  return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
-  );
-}
-// import React from 'react';
-// import DashboardScreen from './src/screens/DashboardScreen';
-
-// export default function App() {
-//   return <DashboardScreen />;
-// }
