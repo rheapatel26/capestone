@@ -75,22 +75,19 @@ function MainTabs() {
   );
 }
 
-// Main App Component with simple linear navigation
-export default function App() {
 // Component that handles authentication flow
 function AppContent() {
-  const { user } = useUser();
+  const { isAuthenticated, isLoading } = useUser();
   
-  // If no user is logged in, show login screen
-  if (!user) {
-    return <LoginScreen onLoginSuccess={() => {/* Navigation will handle this */}} />;
+  // Show loading or determine which screen to show
+  if (isLoading) {
+    return null; // or a loading screen
   }
   
-  // If user is logged in, show main app
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        initialRouteName="SignIn"
+        initialRouteName={isAuthenticated ? "MainTabs" : "SignIn"}
         screenOptions={{ headerShown: false }} // ✅ hides TOP nav bar everywhere
       >
         {/* Auth Screens */}
@@ -108,5 +105,14 @@ function AppContent() {
         <Stack.Screen name="MoneyConceptGame" component={MoneyConceptGame} />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+// Main App Component
+export default function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
   );
 }
