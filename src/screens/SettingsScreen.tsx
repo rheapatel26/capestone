@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AudioContext } from '../context/MusicContext';
 
 // A reusable component for each setting row
 const SettingRow = ({ icon, label, value, onValueChange }: { icon: any; label: string; value: boolean; onValueChange: (newValue: boolean) => void; }) => (
@@ -17,7 +18,8 @@ const SettingRow = ({ icon, label, value, onValueChange }: { icon: any; label: s
 );
 
 export default function SettingsScreen() {
-  const [isMusicEnabled, setIsMusicEnabled] = useState(true);
+  // const {isMusicEnabled, setIsMusicEnabled} = useContext(AudioContext);
+  const { enabled, setEnabled } = useContext(AudioContext);
   const [isSfxEnabled, setIsSfxEnabled] = useState(true);
   const [isTextToSpeechEnabled, setIsTextToSpeechEnabled] = useState(false);
 
@@ -54,8 +56,8 @@ export default function SettingsScreen() {
           <SettingRow
             icon="music-note"
             label="Game Music"
-            value={isMusicEnabled}
-            onValueChange={setIsMusicEnabled}
+            value={enabled}
+            onValueChange={setEnabled}
           />
           <View style={styles.divider} />
           <SettingRow

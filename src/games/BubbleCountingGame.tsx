@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions }
 import { Image as ExpoImage } from 'expo-image'; // For GIF playback
 import { GameFlowManager } from '../utils/GameFlowManager';
 
+import { useAudioPlayer } from 'expo-audio';
+const popSound = require('../../assets/sound/bubble-pop.mp3');
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
@@ -35,6 +37,7 @@ export default function BubbleCountingGame() {
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const popPlayer = useAudioPlayer(popSound);
 
   useEffect(() => {
     startNewProblem();
@@ -85,6 +88,8 @@ export default function BubbleCountingGame() {
       prev.map(b => {
         if (b.id === id && !b.popped) {
           setPoppedCount(prevCount => prevCount + 1);
+          popPlayer.seekTo(0); // rewind to start
+          popPlayer.play();     // play the pop sound
           return { ...b, popped: true, highlighted: false };
         }
         return b;
