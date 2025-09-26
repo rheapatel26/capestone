@@ -40,11 +40,11 @@ const canvasWidth = screenWidth - 40;
 
 const ASSETS = {
 
-    background: require('../../assets/bg1.gif'),
+    background: require('../../assets/digitTrace/bg1.gif'),
 
-    pacman: require('../../assets/1.png'),
+    pacman: require('../../assets/digitTrace/1.png'),
 
-    apple: require('../../assets/apple.png'),
+    apple: require('../../assets/digitTrace/apple.png'),
 
 };
 

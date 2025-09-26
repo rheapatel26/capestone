@@ -8,13 +8,13 @@ const popSound = require('../../assets/sound/bubble-pop.mp3');
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
-  background: require('../../assets/bubblecount_bg1.png'),
+  background: require('../../assets/bubbleCount/bubblecount_bg1.png'),
   bubbles: [
-    require('../../assets/ui/icons8-bubble-100.png'),
-    require('../../assets/ui/icons_bubbles_green.png'),
-    require('../../assets/ui/icons_bubbles_pink.png'),
-    require('../../assets/ui/icons_bubbles_purple.png'),
-    require('../../assets/ui/icons_bubbles_yellow.png'),
+    require('../../assets/bubbleCount/icons8-bubble-100.png'),
+    require('../../assets/bubbleCount/icons_bubbles_green.png'),
+    require('../../assets/bubbleCount/icons_bubbles_pink.png'),
+    require('../../assets/bubbleCount/icons_bubbles_purple.png'),
+    require('../../assets/bubbleCount/icons_bubbles_yellow.png'),
   ],
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
