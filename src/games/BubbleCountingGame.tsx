@@ -3,16 +3,18 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions }
 import { Image as ExpoImage } from 'expo-image'; // For GIF playback
 import { GameFlowManager } from '../utils/GameFlowManager';
 
+import { useAudioPlayer } from 'expo-audio';
+const popSound = require('../../assets/sound/bubble-pop.mp3');
 const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
-  background: require('../../assets/bubblecount_bg1.png'),
+  background: require('../../assets/bubbleCount/bubblecount_bg1.png'),
   bubbles: [
-    require('../../assets/ui/icons8-bubble-100.png'),
-    require('../../assets/ui/icons_bubbles_green.png'),
-    require('../../assets/ui/icons_bubbles_pink.png'),
-    require('../../assets/ui/icons_bubbles_purple.png'),
-    require('../../assets/ui/icons_bubbles_yellow.png'),
+    require('../../assets/bubbleCount/icons8-bubble-100.png'),
+    require('../../assets/bubbleCount/icons_bubbles_green.png'),
+    require('../../assets/bubbleCount/icons_bubbles_pink.png'),
+    require('../../assets/bubbleCount/icons_bubbles_purple.png'),
+    require('../../assets/bubbleCount/icons_bubbles_yellow.png'),
   ],
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
@@ -35,6 +37,7 @@ export default function BubbleCountingGame() {
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const popPlayer = useAudioPlayer(popSound);
 
   useEffect(() => {
     startNewProblem();
@@ -85,6 +88,8 @@ export default function BubbleCountingGame() {
       prev.map(b => {
         if (b.id === id && !b.popped) {
           setPoppedCount(prevCount => prevCount + 1);
+          popPlayer.seekTo(0); // rewind to start
+          popPlayer.play();     // play the pop sound
           return { ...b, popped: true, highlighted: false };
         }
         return b;

@@ -16,6 +16,7 @@
     "@react-navigation/native-stack": "^7.3.25",
     "base64-js": "^1.5.1",
     "expo": "^54.0.9",
+    "expo-audio": "~1.0.13",
     "expo-av": "^16.0.7",
     "expo-image": "~3.0.8",
     "hammerjs": "^2.0.8",

@@ -15,7 +15,7 @@ import { GameFlowManager } from '../utils/GameFlowManager';
 
 // ---------- ASSETS ----------
 const ASSETS = {
-  background: require('../../assets/clockgame_bg.png'),
+  background: require('../../assets/clockgame/clockgame_bg.png'),
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
