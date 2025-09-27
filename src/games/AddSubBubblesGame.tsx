@@ -7,7 +7,20 @@ const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
   background: require('../../assets/addsub/addsub_bg1.png'),
+
   bubble: require('../../assets/bubbleCount/icons8-bubble-100.png'),
+  bubbles: [
+    require('../../assets/bubbleCount/icons8-bubble-100.png'),  // for 0
+    require('../../assets/bubbleCount/icons_bubbles_green.png'), // 1
+    require('../../assets/bubbleCount/icons_bubbles_pink.png'),  // 2
+    require('../../assets/bubbleCount/icons_bubbles_purple.png'), // 3
+    require('../../assets/bubbleCount/icons_bubbles_yellow.png'), // 4
+    require('../../assets/bubbleCount/icons_bubbles_green.png'), // 5
+    require('../../assets/bubbleCount/icons_bubbles_pink.png'),  // 6
+    require('../../assets/bubbleCount/icons_bubbles_purple.png'), // 7
+    require('../../assets/bubbleCount/icons_bubbles_yellow.png'), // 8
+    require('../../assets/bubbleCount/icons_bubbles_green.png'), // 9
+  ],
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
@@ -310,7 +323,7 @@ export default function AddSubBubblesGame() {
               style={styles.trayBubble}
               onPress={() => removeBubbleFromTray(bubble.id)}
             >
-              <Image source={ASSETS.bubble} style={styles.bubbleImage} />
+              <Image source={ASSETS.bubbles[bubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
               <Text style={styles.bubbleValue}>{bubble.value}</Text>
             </TouchableOpacity>
           ))}
@@ -345,7 +358,7 @@ export default function AddSubBubblesGame() {
               onPress={() => addBubbleToTray(bubble.id)}
               activeOpacity={0.7}
             >
-              <Image source={ASSETS.bubble} style={styles.bubbleImage} />
+              <Image source={ASSETS.bubbles[bubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
               <Text style={styles.bubbleValue}>{bubble.value}</Text>
             </TouchableOpacity>
           ))}

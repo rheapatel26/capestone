@@ -81,7 +81,8 @@ export default function BubbleCountingGame() {
       highlighted: false,
       x: Math.random() * (containerWidth - 60),   // 60 = bubble size
       y: Math.random() * (containerHeight - 60),
-      colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length)
+      // colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length) #use only first bubble
+      colorIndex: 0
     }));
     setBubbles(newBubbles);
   }
