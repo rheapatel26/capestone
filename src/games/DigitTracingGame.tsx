@@ -1,1409 +1,451 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
-
-import {
-
-  View,
-
-  Text,
-
-  StyleSheet,
-
-  Dimensions,
-
-  PanResponder,
-
-  TouchableOpacity,
-
-  Image,
-
-  LayoutChangeEvent,
-
-  Animated,
-
-  ImageBackground,
-
-  Vibration,                          
-
-} from 'react-native';
-
-
-
-import Svg, { Path, Circle, Defs, Mask, Rect } from 'react-native-svg';
-
-import * as pathUtils from 'svg-path-properties';
-
-const screenWidth = Dimensions.get('window').width;
-
-const canvasWidth = screenWidth - 40;
-
-
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Dimensions, Image } from 'react-native';
 
 const ASSETS = {
-
-    background: require('../../assets/bg1.gif'),
-
-    pacman: require('../../assets/1.png'),
-
-    apple: require('../../assets/apple.png'),
-
+  pacman: require('../../assets/1.png'),
+  apple: require('../../assets/apple.png'),
 };
 
+// Scale coordinates to fit the game area
+const scaleCoordinates = (paths: [number, number][], screenWidth: number) => {
+  const gameAreaSize = screenWidth * 0.9; // 90% of screen width
+  const scale = gameAreaSize / 600; // Original coordinates were in 600x600 space
+  const offsetX = (gameAreaSize - (600 * scale)) / 2;
+  const offsetY = (gameAreaSize - (600 * scale)) / 2;
 
-
-// Define paths for digits 0-9
-
-const digitPaths = {
-
-  0: "M200 80 Q240 80 240 120 L240 180 Q240 220 200 220 Q160 220 160 180 L160 120 Q160 80 200 80",
-
-  1: "M180 80 L200 80 L200 220 L180 220",
-
-  2: "M150 80 L250 80 Q280 80 280 110 L280 140 L150 200 L150 230 L280 230",
-
-  3: "M150 80 L250 80 Q280 80 280 110 Q280 130 250 130 Q280 130 280 160 Q280 190 250 190 L150 190",
-
-  4: "M150 80 L150 150 L250 150 L200 80 L200 220",
-
-  5: "M280 80 L150 80 L150 150 L250 150 Q280 150 280 180 Q280 220 250 220 L150 220",
-
-  6: "M250 80 L150 80 L150 220 Q150 250 180 250 Q250 250 250 190 Q250 150 180 150 L150 150",
-
-  7: "M150 80 L280 80 L200 220",
-
-  8: "M200 80 Q160 80 160 110 Q160 130 200 130 Q240 130 240 110 Q240 80 200 80 Q240 80 240 110 Q240 130 200 130 Q160 130 160 160 Q160 190 200 190 Q240 190 240 160 Q240 130 200 130",
-
-  9: "M150 220 L250 220 L250 80 Q250 50 220 50 Q150 50 150 110 Q150 150 220 150 L250 150"
-
+  return paths.map(([x, y]) => [
+    x * scale + offsetX,
+    y * scale + offsetY
+  ] as [number, number]);
 };
 
-
-
-// Get start and end points for each digit
-
-const getDigitPoints = (digit: number) => {
-
-  const path = digitPaths[digit as keyof typeof digitPaths];
-
-  const properties = new pathUtils.svgPathProperties(path);
-
-  const startPoint = properties.getPointAtLength(0);
-
-  const endPoint = properties.getPointAtLength(properties.getTotalLength());
-
-  return { startPoint, endPoint, path };
-
-};
-
-
-
-const allowedOffset = 50;
-
-const PACMAN_TOUCH_RADIUS = 60;
-
-
-
-// Generate apple positions along the path
-
-const generateApplePositions = (path: string) => {
-
-  const properties = new pathUtils.svgPathProperties(path);
-
-  const totalLength = properties.getTotalLength();
-
-  const appleSpacing = 25;
-
-  const positions = [];
-
-
-
-  for (let i = 0; i <= totalLength; i += appleSpacing) {
-
-    const point = properties.getPointAtLength(i);
-
-    positions.push({ x: point.x, y: point.y, id: i });
-
+// Helper function to generate evenly spaced points along a path
+const generatePoints = (start: [number, number], end: [number, number], count: number): [number, number][] => {
+  const points: [number, number][] = [];
+  for (let i = 0; i < count; i++) {
+    points.push([
+      start[0] + (end[0] - start[0]) * i / (count - 1),
+      start[1] + (end[1] - start[1]) * i / (count - 1)
+    ]);
   }
-
- 
-
-  return positions;
-
+  return points;
 };
 
-
-
-// Generate dotted line points for visual guidance
-
-const generateDottedPath = (path: string) => {
-
-  const properties = new pathUtils.svgPathProperties(path);
-
-  const totalLength = properties.getTotalLength();
-
-  const dotSpacing = 15;
-
-  const dots = [];
-
-
-
-  for (let i = 0; i <= totalLength; i += dotSpacing) {
-
-    const point = properties.getPointAtLength(i);
-
-    dots.push({ x: point.x, y: point.y, id: i });
-
-  }
-
- 
-
-  return dots;
-
+// Function to get a random number's path
+const getRandomNumberPath = (): { number: number; path: [number, number][] } => {
+  const randomNum = Math.floor(Math.random() * 10) + 1;
+  return {
+    number: randomNum,
+    path: numberPaths[randomNum]
+  };
 };
 
+const numberPaths: Record<number, [number, number][]> = {
+  1: [
+    ...generatePoints([300, 150], [300, 400], 8), // Vertical line
+  ],
+  2: [
+    ...generatePoints([200, 150], [400, 150], 5), // Top horizontal
+    ...generatePoints([400, 150], [400, 275], 4), // Right curve
+    ...generatePoints([400, 275], [200, 275], 5), // Middle diagonal
+    ...generatePoints([200, 275], [200, 400], 4), // Bottom vertical
+    ...generatePoints([200, 400], [400, 400], 5), // Bottom horizontal
+  ],
+  3: [
+    ...generatePoints([200, 150], [400, 150], 5), // Top horizontal
+    ...generatePoints([400, 150], [400, 275], 4), // Upper right curve
+    ...generatePoints([400, 275], [250, 275], 4), // Middle
+    ...generatePoints([400, 275], [400, 400], 4), // Lower right curve
+    ...generatePoints([400, 400], [200, 400], 5), // Bottom horizontal
+  ],
+  4: [
+    ...generatePoints([200, 150], [200, 275], 4), // Left vertical
+    ...generatePoints([200, 275], [400, 275], 5), // Middle horizontal
+    ...generatePoints([400, 150], [400, 400], 7), // Right vertical
+  ],
+  5: [
+    ...generatePoints([400, 150], [200, 150], 5), // Top horizontal
+    ...generatePoints([200, 150], [200, 275], 4), // Left vertical
+    ...generatePoints([200, 275], [400, 275], 5), // Middle horizontal
+    ...generatePoints([400, 275], [400, 400], 4), // Right vertical
+    ...generatePoints([400, 400], [200, 400], 5), // Bottom horizontal
+  ],
+  6: [
+    ...generatePoints([400, 150], [200, 150], 5), // Top curve
+    ...generatePoints([200, 150], [200, 400], 7), // Left vertical
+    ...generatePoints([200, 400], [400, 400], 5), // Bottom horizontal
+    ...generatePoints([400, 400], [400, 275], 4), // Right vertical
+    ...generatePoints([400, 275], [200, 275], 5), // Middle horizontal
+  ],
+  7: [
+    ...generatePoints([200, 150], [400, 150], 5), // Top horizontal
+    ...generatePoints([400, 150], [200, 400], 8), // Diagonal
+  ],
+  8: [
+    ...generatePoints([300, 150], [200, 150], 3), // Top left curve
+    ...generatePoints([200, 150], [200, 275], 4), // Left upper vertical
+    ...generatePoints([200, 275], [300, 275], 3), // Middle left curve
+    ...generatePoints([300, 275], [400, 275], 3), // Middle right curve
+    ...generatePoints([400, 275], [400, 400], 4), // Right lower vertical
+    ...generatePoints([400, 400], [300, 400], 3), // Bottom right curve
+    ...generatePoints([300, 400], [200, 400], 3), // Bottom left curve
+    ...generatePoints([200, 400], [200, 275], 4), // Left lower vertical
+  ],
+  9: [
+    ...generatePoints([300, 150], [400, 150], 3), // Top right curve
+    ...generatePoints([400, 150], [400, 400], 7), // Right vertical
+    ...generatePoints([400, 150], [300, 150], 3), // Top left curve
+    ...generatePoints([300, 150], [200, 150], 3), // Top horizontal
+    ...generatePoints([200, 150], [200, 275], 4), // Left vertical
+    ...generatePoints([200, 275], [400, 275], 5), // Middle horizontal
+  ],
+  10: [
+    ...generatePoints([200, 150], [200, 400], 7), // Left 1
+    ...generatePoints([350, 150], [350, 400], 7), // Right 0
+    ...generatePoints([350, 150], [450, 150], 3), // Top right curve
+    ...generatePoints([450, 150], [450, 400], 7), // Far right vertical
+    ...generatePoints([450, 400], [350, 400], 3), // Bottom right curve
+  ]
+};
 
+export default function PacmanGame() {
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [score, setScore] = useState(0);
+  const [apples, setApples] = useState<{ x: number; y: number; eaten: boolean }[]>([]);
+  const [pacmanPos, setPacmanPos] = useState({ x: 50, y: 200 });
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [randomNumber, setRandomNumber] = useState<number | null>(null);
+  const isDragging = useRef(false);
+  const { width, height } = Dimensions.get('window');
 
-export default function DigitTracingGame() {
-
-  const [currentLevel, setCurrentLevel] = useState(0); // Start with digit 0
-
-  const [line, setLine] = useState('');
-
-  const [pacmanPos, setPacmanPos] = useState(() => getDigitPoints(0).startPoint);
-
-  const [isCompleted, setIsCompleted] = useState(false);
-
-  const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
-
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const [isTracing, setIsTracing] = useState(false);
-
-  const [tracedCircles, setTracedCircles] = useState<Array<{x: number, y: number, id: number}>>([]);
-
-  const [eatenApples, setEatenApples] = useState<Set<number>>(new Set());
-
-  const [showHint, setShowHint] = useState(true);
-
-  const [progress, setProgress] = useState(0);
-
-  const [gameStarted, setGameStarted] = useState(false);
-
-
-
-  // Get current digit info
-
-  const currentDigitInfo = useMemo(() => getDigitPoints(currentLevel), [currentLevel]);
-
-  const [applePositions, setApplePositions] = useState(() => generateApplePositions(currentDigitInfo.path));
-
-  const [dottedPath, setDottedPath] = useState(() => generateDottedPath(currentDigitInfo.path));
-
-
-
-  const pathRef = useRef('');
-
-  const completed = useRef(false);
-
-  const containerRef = useRef<View>(null);
-
-  const isTracingRef = useRef(false);
-
-  const properties = useMemo(() => new pathUtils.svgPathProperties(currentDigitInfo.path), [currentDigitInfo.path]);
-
-  const rotationAnim = useRef(new Animated.Value(0)).current;
-
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  const hintAnim = useRef(new Animated.Value(0)).current;
-
-
-
-  // Update positions when level changes
-
+  // Initialize level
   useEffect(() => {
-
-    const digitInfo = getDigitPoints(currentLevel);
-
-    setPacmanPos(digitInfo.startPoint);
-
-    setApplePositions(generateApplePositions(digitInfo.path));
-
-    setDottedPath(generateDottedPath(digitInfo.path));
-
-    resetGameState();
-
-  }, [currentLevel]);
-
-
-
-  // Pulsing animation for Pac-Man when not started
-
-  useEffect(() => {
-
-    if (!gameStarted) {
-
-      Animated.loop(
-
-        Animated.sequence([
-
-          Animated.timing(pulseAnim, {
-
-            toValue: 1.3,
-
-            duration: 800,
-
-            useNativeDriver: true,
-
-          }),
-
-          Animated.timing(pulseAnim, {
-
-            toValue: 1,
-
-            duration: 800,
-
-            useNativeDriver: true,
-
-          }),
-
-        ])
-
-      ).start();
-
+    let path;
+    if (currentLevel > 10) {
+      const { number, path: randomPath } = getRandomNumberPath();
+      setRandomNumber(number);
+      path = scaleCoordinates(randomPath, width);
     } else {
-
-      pulseAnim.setValue(1);
-
+      setRandomNumber(null);
+      path = scaleCoordinates(numberPaths[currentLevel], width);
     }
 
-  }, [gameStarted]);
+    const newApples = path.map(([x, y]) => ({ x, y, eaten: false }));
+    setApples(newApples);
+    // Position Pacman at the start of the path
+    const [startX, startY] = path[0];
+    setPacmanPos({ x: startX, y: startY });
+    setShowSuccess(false);
+  }, [currentLevel, width]);
 
-
-
-  // Hint animation
-
-  useEffect(() => {
-
-    if (showHint) {
-
-      Animated.loop(
-
-        Animated.timing(hintAnim, {
-
-          toValue: 1,
-
-          duration: 2000,
-
-          useNativeDriver: true,
-
-        })
-
-      ).start();
-
-    }
-
-  }, [showHint]);
-
-
-
-  const pacmanImage = useMemo(() => (
-
-    <Image
-
-      source={ASSETS.pacman}
-
-      style={styles.pacmanImage}
-
-    />
-
-  ), []);
-
-
-
-  const calculateRotation = (currentPos: { x: number; y: number }, newPos: { x: number; y: number }) => {
-
-    const dx = newPos.x - currentPos.x;
-
-    const dy = newPos.y - currentPos.y;
-
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-
-    return angle;
-
+  const movePacman = (dx: number, dy: number) => {
+    setPacmanPos((prev) => {
+      const newX = Math.max(15, Math.min(585, prev.x + dx));
+      const newY = Math.max(15, Math.min(335, prev.y + dy));
+      return { x: newX, y: newY };
+    });
+    checkAppleCollision();
   };
 
+  const checkAppleCollision = () => {
+    setApples((prev) => {
+      const updated = prev.map((apple) => {
+        const dist = Math.sqrt((pacmanPos.x - apple.x) ** 2 + (pacmanPos.y - apple.y) ** 2);
+        if (!apple.eaten && dist < 25) {
+          setScore((s) => s + 10);
+          return { ...apple, eaten: true };
+        }
+        return apple;
+      });
 
-
-  const isNearPath = (x: number, y: number): boolean => {
-
-    const length = properties.getTotalLength();
-
-    for (let i = 0; i <= length; i += 5) {
-
-      const { x: px, y: py } = properties.getPointAtLength(i);
-
-      if (Math.hypot(px - x, py - y) < allowedOffset) return true;
-
-    }
-
-    return false;
-
+      if (updated.every((a) => a.eaten)) {
+        setTimeout(() => setShowSuccess(true), 300);
+      }
+      return updated;
+    });
   };
-
-
-
-  const isTouchOnPacman = (touchX: number, touchY: number): boolean => {
-
-    const distance = Math.hypot(pacmanPos.x - touchX, pacmanPos.y - touchY);
-
-    return distance < PACMAN_TOUCH_RADIUS;
-
-  };
-
-
-
-  const isNearStartPoint = (x: number, y: number): boolean => {
-
-    return Math.hypot(currentDigitInfo.startPoint.x - x, currentDigitInfo.startPoint.y - y) < allowedOffset;
-
-  };
-
-
-
-  const isAtEnd = (x: number, y: number): boolean => {
-
-    return Math.hypot(currentDigitInfo.endPoint.x - x, currentDigitInfo.endPoint.y - y) < allowedOffset;
-
-  };
-
-
-
-  // Calculate progress based on apples eaten (more resistance - apples must be eaten)
-
-  const calculateProgress = () => {
-
-    const totalApples = applePositions.length;
-
-    const eatenApplesCount = eatenApples.size;
-
-    return totalApples > 0 ? (eatenApplesCount / totalApples) * 100 : 0;
-
-  };
-
-
-
-  const resetGameState = () => {
-
-    setLine('');
-
-    setIsCompleted(false);
-
-    setIsAnimating(false);
-
-    setIsTracing(false);
-
-    setGameStarted(false);
-
-    setShowHint(true);
-
-    setProgress(0);
-
-    isTracingRef.current = false;
-
-    completed.current = false;
-
-    pathRef.current = '';
-
-    setTracedCircles([]);
-
-    setEatenApples(new Set());
-
-    rotationAnim.setValue(0);
-
-    scaleAnim.setValue(1);
-
-    pulseAnim.setValue(1);
-
-  };
-
-
 
   const nextLevel = () => {
+    setCurrentLevel((l) => {
+      // After level 10, generate new random levels
+      if (l >= 10) {
+        const { number } = getRandomNumberPath();
+        setRandomNumber(number);
+        return l + 1;
+      }
+      return l + 1;
+    });
+  };
 
-    if (currentLevel < 9) {
+  const prevLevel = () => {
+    if (currentLevel > 1) setCurrentLevel((l) => l - 1);
+  };
 
-      setCurrentLevel(currentLevel + 1);
-
+  const resetLevel = () => {
+    if (currentLevel > 10) {
+      // For random levels, generate a new random number
+      const { number, path: randomPath } = getRandomNumberPath();
+      setRandomNumber(number);
+      const scaledPath = scaleCoordinates(randomPath, width);
+      const newApples = scaledPath.map(([x, y]) => ({ x, y, eaten: false }));
+      setApples(newApples);
+      const [startX, startY] = scaledPath[0];
+      setPacmanPos({ x: startX, y: startY });
     } else {
-
-      // All levels completed
-
-      alert('Congratulations! You completed all digit levels!');
-
+      const path = scaleCoordinates(numberPaths[currentLevel], width);
+      const newApples = path.map(([x, y]) => ({ x, y, eaten: false }));
+      setApples(newApples);
+      const [startX, startY] = path[0];
+      setPacmanPos({ x: startX, y: startY });
     }
-
+    setShowSuccess(false);
+    setScore(0);
   };
 
+  // Drag & Touch
+  const handleDrag = (e: any) => {
+    if (!isDragging.current) return;
 
+    const touch = e.nativeEvent.touches[0];
+    const locationX = touch.locationX;
+    const locationY = touch.locationY;
 
-  const resetGame = () => {
+    // Make sure Pacman stays within the game area bounds
+    const gameAreaSize = width * 0.9;
+    const newX = Math.max(15, Math.min(gameAreaSize - 15, locationX));
+    const newY = Math.max(15, Math.min(gameAreaSize - 15, locationY));
 
-    const digitInfo = getDigitPoints(currentLevel);
-
-    setPacmanPos(digitInfo.startPoint);
-
-    resetGameState();
-
+    setPacmanPos({ x: newX, y: newY });
+    checkAppleCollision();
   };
-
-
-
-  const panResponder = useRef(
-
-    PanResponder.create({
-
-      onStartShouldSetPanResponder: () => true,
-
-      onMoveShouldSetPanResponder: () => true,
-
-
-
-      onPanResponderGrant: (evt, gesture) => {
-
-        const x = evt.nativeEvent.locationX;
-
-        const y = evt.nativeEvent.locationY;
-
-       
-
-        if (isTouchOnPacman(x, y) || isNearStartPoint(x, y) || isNearPath(x, y)) {
-
-          setIsTracing(true);
-
-          setGameStarted(true);
-
-          setShowHint(false);
-
-          isTracingRef.current = true;
-
-          setIsAnimating(true);
-
-          pathRef.current = `M ${pacmanPos.x} ${pacmanPos.y}`;
-
-         
-
-          Vibration.vibrate(100);
-
-         
-
-          Animated.sequence([
-
-            Animated.timing(scaleAnim, {
-
-              toValue: 1.2,
-
-              duration: 100,
-
-              useNativeDriver: true,
-
-            }),
-
-            Animated.timing(scaleAnim, {
-
-              toValue: 1,
-
-              duration: 100,
-
-              useNativeDriver: true,
-
-            }),
-
-          ]).start();
-
-        }
-
-      },
-
-
-
-      onPanResponderMove: (evt, gesture) => {
-
-        if (!isTracingRef.current) {
-
-          return;
-
-        }
-
-
-
-        const x = evt.nativeEvent.locationX;
-
-        const y = evt.nativeEvent.locationY;
-
-
-
-        if (isNearPath(x, y)) {
-
-          pathRef.current += ` L ${x} ${y}`;
-
-          setLine(pathRef.current);
-
-         
-
-          // Check if Pac-Man is near any apples and "eat" them with enhanced feedback
-
-          applePositions.forEach(apple => {
-
-            if (!eatenApples.has(apple.id) && Math.hypot(apple.x - x, apple.y - y) < 30) {
-
-              setEatenApples(prev => new Set([...prev, apple.id]));
-
-              Vibration.vibrate([50, 50, 100]);
-
-            }
-
-          });
-
-         
-
-          // Update progress based on apples eaten (resistance system)
-
-          const currentProgress = calculateProgress();
-
-          setProgress(currentProgress);
-
-         
-
-          setTracedCircles(prev => [
-
-            ...prev,
-
-            { x, y, id: Date.now() + Math.random() }
-
-          ]);
-
-
-
-          const newRotation = calculateRotation(pacmanPos, { x, y });
-
-          Animated.timing(rotationAnim, {
-
-            toValue: newRotation,
-
-            duration: 100,
-
-            useNativeDriver: true,
-
-          }).start();
-
-
-
-          setPacmanPos({ x, y });
-
-
-
-          // Check completion only when all apples are eaten and at end point
-
-          if (isAtEnd(x, y) && eatenApples.size === applePositions.length && !completed.current) {
-
-            completed.current = true;
-
-            setIsCompleted(true);
-
-            setIsAnimating(false);
-
-            setIsTracing(false);
-
-            isTracingRef.current = false;
-
-            setProgress(100);
-
-           
-
-            Animated.sequence([
-
-              Animated.timing(scaleAnim, {
-
-                toValue: 1.5,
-
-                duration: 200,
-
-                useNativeDriver: true,
-
-              }),
-
-              Animated.timing(scaleAnim, {
-
-                toValue: 1,
-
-                duration: 200,
-
-                useNativeDriver: true,
-
-              }),
-
-            ]).start();
-
-           
-
-            Vibration.vibrate([200, 100, 200, 100, 400]);
-
-          }
-
-        } else {
-
-          setTimeout(() => {
-
-            if (!isNearPath(x, y)) {
-
-              setPacmanPos({ x, y });
-
-             
-
-              const newRotation = calculateRotation(pacmanPos, { x, y });
-
-              Animated.timing(rotationAnim, {
-
-                toValue: newRotation,
-
-                duration: 100,
-
-                useNativeDriver: true,
-
-              }).start();
-
-            }
-
-          }, 200);
-
-        }
-
-      },
-
-
-
-      onPanResponderRelease: () => {
-
-        setIsAnimating(false);
-
-        Animated.timing(scaleAnim, {
-
-          toValue: 1,
-
-          duration: 200,
-
-          useNativeDriver: true,
-
-        }).start();
-
-      },
-
-    })
-
-  ).current;
-
-
-
-  const onContainerLayout = (event: LayoutChangeEvent) => {
-
-    const { x, y } = event.nativeEvent.layout;
-
-    setContainerOffset({ x, y });
-
-  };
-
-
 
   return (
-
     <ImageBackground
-
-      source={ASSETS.background}
-
+      source={require('../../assets/Digit_Tracing_bg.gif')}
       style={styles.container}
-
-      resizeMode="cover"
-
     >
-
-      <View style={styles.levelContainer}>
-
-        <Text style={styles.levelText}>Level: {currentLevel + 1}/10</Text>
-
-        <Text style={styles.digitText}>Digit: {currentLevel}</Text>
-
+      <View style={styles.header}>
+        <Text style={styles.title}>Pacman Number Tracing</Text>
+        <Text style={styles.levelInfo}>
+          {currentLevel > 10
+            ? `Random Level - Trace Number ${randomNumber}`
+            : `Level ${currentLevel} - Trace Number ${currentLevel}`
+          }
+        </Text>
+        <Text style={styles.instructions}>Move Pacman with touch gestures to eat apples along the number!</Text>
       </View>
 
-
-
-      <View style={styles.progressContainer}>
-
-        <Text style={styles.progressText}>Progress: {Math.round(progress)}%</Text>
-
-        <Text style={styles.applesText}>Apples: {eatenApples.size}/{applePositions.length}</Text>
-
-        <View style={styles.progressBarBg}>
-
-          <View style={[styles.progressBar, { width: `${progress}%` }]} />
-
-        </View>
-
-      </View>
-
-
+      <Text style={styles.score}>Score: {score}</Text>
 
       <View
-
-        ref={containerRef}
-
-        style={styles.traceBox}
-
-        {...panResponder.panHandlers}
-
-        onLayout={onContainerLayout}
-
+        style={styles.gameArea}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={() => isDragging.current = true}
+        onResponderMove={handleDrag}
+        onResponderRelease={() => isDragging.current = false}
       >
-
-        <Svg height="300" width={canvasWidth}>
-
-          {showHint && dottedPath.map((dot, index) => (
-
-            <Circle
-
-              key={`dot-${index}`}
-
-              cx={dot.x}
-
-              cy={dot.y}
-
-              r={3}
-
-              fill="rgba(100, 100, 100, 0.5)"
-
-            />
-
-          ))}
-
-
-
-          {line ? (
-
-            <Path
-
-              d={line}
-
-              stroke="orange"
-
-              strokeWidth={12}
-
-              fill="none"
-
-              strokeLinecap="round"
-
-              strokeLinejoin="round"
-
-              opacity={0.8}
-
-            />
-
-          ) : null}
-
-        </Svg>
-
-
-
-        {applePositions.map((apple) => {
-
-          if (eatenApples.has(apple.id)) {
-
-            return null;
-
-          }
-
-          return (
-
-            <Image
-
-              key={apple.id}
-
-              source={ASSETS.apple}
-
-              style={[
-
-                styles.appleImage,
-
-                {
-
-                  position: 'absolute',
-
-                  left: apple.x - 10,
-
-                  top: apple.y - 10,
-
-                }
-
-              ]}
-
-            />
-
-          );
-
-        })}
-
-
-
-        <Animated.View
-
-          style={[
-
-            styles.pacmanContainer,
-
-            {
-
-              top: pacmanPos.y - 30,
-
-              left: pacmanPos.x - 30,
-
-              transform: [
-
-                {
-
-                  rotate: rotationAnim.interpolate({
-
-                    inputRange: [0, 360],
-
-                    outputRange: ['0deg', '360deg'],
-
-                  }),
-
-                },
-
-                { scale: gameStarted ? scaleAnim : pulseAnim },
-
-              ],
-
-            },
-
-          ]}
-
-        >
-
-          <View style={styles.touchArea} />
-
-          {pacmanImage}
-
-         
-
-          {!gameStarted && (
-
-            <Animated.View
-
-              style={[
-
-                styles.touchIndicator,
-
-                {
-
-                  transform: [
-
-                    {
-
-                      scale: hintAnim.interpolate({
-
-                        inputRange: [0, 1],
-
-                        outputRange: [1, 1.8],
-
-                      }),
-
-                    },
-
-                  ],
-
-                  opacity: hintAnim.interpolate({
-
-                    inputRange: [0, 1],
-
-                    outputRange: [0.8, 0],
-
-                  }),
-
-                },
-
-              ]}
-
-            />
-
-          )}
-
-        </Animated.View>
-
-      </View>
-
-
-
-      {isCompleted ? (
-
-        <View style={styles.completionContainer}>
-
-          <Text style={styles.success}>Fantastic! You traced number {currentLevel}!</Text>
-
-          <Text style={styles.completionStats}>
-
-            Apples eaten: {eatenApples.size}/{applePositions.length}
-
-          </Text>
-
-        </View>
-
-      ) : null}
-
-
-
-      <View style={styles.buttonContainer}>
-
-        <TouchableOpacity onPress={resetGame} style={styles.button}>
-
-          <Text style={styles.buttonText}>
-
-            {isCompleted ? "Try Again" : "Reset"}
-
-          </Text>
-
-        </TouchableOpacity>
-
-        
-
-        {(progress === 100 && eatenApples.size === applePositions.length) && (
-
-          <TouchableOpacity onPress={nextLevel} style={styles.nextButton}>
-
-            <Text style={styles.nextButtonText}>
-
-              {currentLevel < 9 ? "Next" : "Finish"}
-
-            </Text>
-
-          </TouchableOpacity>
-
-        )}
-
-      </View>
-
-
-
-      <View style={styles.statusContainer}>
-
-        <Text style={styles.statusText}>
-
-          {!gameStarted ? "Touch Pac-Man to start!" :
-
-           isTracing ? "Great! Keep going!" :
-
-           "Touch Pac-Man to continue"}
-
+        <Text style={styles.numberDisplay}>
+          {currentLevel > 10 ? randomNumber : currentLevel}
         </Text>
 
+        {apples.map((apple, i) => (
+          <Image
+            key={i}
+            source={ASSETS.apple}
+            style={[
+              styles.apple,
+              apple.eaten && styles.appleEaten,
+              { left: apple.x - 10, top: apple.y - 10 }
+            ]}
+          />
+        ))}
+
+        <View
+          style={[{ left: pacmanPos.x - 15, top: pacmanPos.y - 15, position: 'absolute' }]}
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={() => isDragging.current = true}
+        >
+          <Image
+            source={ASSETS.pacman}
+            style={styles.pacman}
+          />
+        </View>
+
+        {showSuccess && (
+          <View style={styles.successMessage}>
+            <Text style={styles.successText}>Great Job! 🎉</Text>
+            <Text style={styles.successSubtext}>Level Complete!</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.controls}>
+        {/* Row for first two buttons */}
+        <View style={styles.row}>
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={resetLevel}
+          >
+            <Text style={styles.buttonText}>Reset Level</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={nextLevel}
+          >
+            <Text style={styles.buttonText}>Next Level</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Third button below */}
+        <TouchableOpacity 
+  style={[
+    styles.button, 
+    styles.centerButton, 
+    { width: 200, marginLeft:50 }, // Increase width here
+    currentLevel <= 1 && styles.buttonDisabled
+  ]}
+  onPress={prevLevel}
+  disabled={currentLevel <= 1}
+>
+  <Text style={styles.buttonText}>Previous Level</Text>
+</TouchableOpacity>
       </View>
 
     </ImageBackground>
-
   );
-
 }
 
-
-
 const styles = StyleSheet.create({
-
   container: {
-
     flex: 1,
-
-    alignItems: 'center',
-
-    paddingTop: 60,
-
-    justifyContent: 'space-between',
-
-  },
-
-  levelContainer: {
-
-    flexDirection: 'row',
-
-    justifyContent: 'space-between',
-
-    width: canvasWidth,
-
-    marginBottom: 15,
-
-    paddingHorizontal: 20,
-
-  },
-
-  levelText: {
-
-    fontSize: 16,
-
-    fontWeight: 'bold',
-
-    color: '#FFFFFF',
-
-    backgroundColor: 'rgba(77, 128, 128, 0.8)',
-
-    paddingHorizontal: 15,
-
-    paddingVertical: 8,
-
-    borderRadius: 15,
-
-  },
-
-  digitText: {
-
-    fontSize: 16,
-
-    fontWeight: 'bold',
-
-    color: '#FFFFFF',
-
-    backgroundColor: 'rgba(25, 118, 210, 0.8)',
-
-    paddingHorizontal: 15,
-
-    paddingVertical: 8,
-
-    borderRadius: 15,
-
-  },
-
-  progressContainer: {
-
-    alignItems: 'center',
-
-    marginBottom: 15,
-
-  },
-
-  progressText: {
-
-    fontSize: 14,
-
-    color: '#FFFFFF',
-
-    fontWeight: 'bold',
-
-    marginBottom: 3,
-
-  },
-
-  applesText: {
-
-    fontSize: 12,
-
-    color: '#FFFFFF',
-
-    fontWeight: '600',
-
-    marginBottom: 8,
-
-    backgroundColor: 'rgba(76, 175, 80, 0.7)',
-
-    paddingHorizontal: 12,
-
-    paddingVertical: 3,
-
-    borderRadius: 10,
-
-  },
-
-  progressBarBg: {
-
-    width: canvasWidth - 40,
-
-    height: 10,
-
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-
-    borderRadius: 5,
-
-    overflow: 'hidden',
-
-  },
-
-  progressBar: {
-
+    width: '100%',
     height: '100%',
-
-    backgroundColor: '#4CAF50',
-
-    borderRadius: 5,
-
   },
-
-  traceBox: {
-
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-
-    borderRadius: 20,
-
+  header: {
     padding: 20,
-
-    width: canvasWidth,
-
-    height: canvasWidth * 0.9, // Slightly smaller to make room for buttons
-
-    justifyContent: 'center',
-
     alignItems: 'center',
-
-    elevation: 4,
-
-    borderWidth: 3,
-
-    borderColor: 'rgba(25, 118, 210, 0.3)',
-
   },
-
-  pacmanContainer: {
-
-    position: 'absolute',
-
-    width: 60,
-
-    height: 60,
-
-    zIndex: 10,
-
-    justifyContent: 'center',
-
-    alignItems: 'center',
-
-  },
-
-  pacmanImage: {
-
-    width: 50,
-
-    height: 50,
-
-  },
-
-  touchArea: {
-
-    position: 'absolute',
-
-    width: PACMAN_TOUCH_RADIUS * 2,
-
-    height: PACMAN_TOUCH_RADIUS * 2,
-
-    top: -PACMAN_TOUCH_RADIUS + 25,
-
-    left: -PACMAN_TOUCH_RADIUS + 25,
-
-    backgroundColor: 'transparent',
-
-  },
-
-  touchIndicator: {
-
-    position: 'absolute',
-
-    width: 60,
-
-    height: 60,
-
-    borderRadius: 30,
-
-    borderWidth: 3,
-
-    borderColor: '#4CAF50',
-
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-
-  },
-
-  completionContainer: {
-
-    alignItems: 'center',
-
-    marginTop: 15,
-
-    marginBottom: 10,
-
-  },
-
-  success: {
-
-    fontSize: 16,
-
-    color: '#FFD700',
-
-    fontWeight: 'bold',
-
-    backgroundColor: 'rgba(25, 118, 210, 0.9)',
-
-    paddingVertical: 8,
-
-    paddingHorizontal: 15,
-
-    borderRadius: 12,
-
-    textAlign: 'center',
-
-    borderColor: '#FFFFFF',
-
-    borderWidth: 2,
-
-    marginBottom: 5,
-
-  },
-
-  completionStats: {
-
-    fontSize: 12,
-
+  title: {
+    fontSize: 24,
     color: '#FFFFFF',
-
-    fontWeight: 'bold',
-
-    backgroundColor: 'rgba(76, 175, 80, 0.8)',
-
-    paddingVertical: 6,
-
-    paddingHorizontal: 12,
-
-    borderRadius: 8,
-
-    borderColor: '#FFFFFF',
-
-    borderWidth: 1,
-
-    marginBottom: 8,
-
-  },
-
-  nextButton: {
-
-    backgroundColor: '#4CAF50',
-
-    paddingVertical: 12,
-
-    paddingHorizontal: 25,
-
-    borderRadius: 20,
-
-    elevation: 5,
-
-    borderWidth: 2,
-
-    borderColor: '#FFFFFF',
-
-    marginLeft: 15,
-
-  },
-
-  nextButtonText: {
-
-    color: '#fff',
-
-    fontWeight: 'bold',
-
-    fontSize: 14,
-
-  },
-
-  buttonContainer: {
-
-    marginBottom: 15,
-
-    flexDirection: 'row',
-
-    justifyContent: 'center',
-
-    alignItems: 'center',
-
-    width: canvasWidth,
-
-  },
-
-  button: {
-
-    backgroundColor: '#1976D2',
-
-    paddingVertical: 12,
-
-    paddingHorizontal: 25,
-
-    borderRadius: 20,
-
-    elevation: 5,
-
-    shadowColor: '#000',
-
-    shadowOffset: { width: 0, height: 2 },
-
-    shadowOpacity: 0.25,
-
-    shadowRadius: 3.84,
-
-    borderWidth: 2,
-
-    borderColor: '#FFFFFF',
-
-  },
-
-  buttonText: {
-
-    color: '#fff',
-
-    fontWeight: 'bold',
-
-    fontSize: 14,
-
-  },
-
-  statusContainer: {
-
-    marginBottom: 10,
-
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-
-    paddingVertical: 8,
-
-    paddingHorizontal: 15,
-
-    borderRadius: 12,
-
-    borderWidth: 1,
-
-    borderColor: '#1976D2',
-
-  },
-
-  statusText: {
-
-    fontSize: 12,
-
-    color: '#1976D2',
-
-    fontWeight: 'bold',
-
+    fontFamily: 'PixelFont',
+    marginTop: 50,
     textAlign: 'center',
-
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 3,
   },
-
-  appleImage: {
-
-    width: 17,
-
-    height: 17,
-
-    zIndex: 5,
-
+  levelInfo: {
+    fontSize: 18,
+    color: '#E0F7FA',
+    fontFamily: 'PixelFont',
+    marginBottom: 5,
   },
-
+  instructions: {
+    fontSize: 14,
+    lineHeight: 18,
+    color: '#E0F7FA',
+    fontFamily: 'PixelFont',
+    textAlign: 'center',
+  },
+  score: { 
+    fontSize: 20,
+    color: '#FFD700',
+    fontFamily: 'PixelFont',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  gameArea: {
+    width: Dimensions.get('window').width * 0.9,
+    height: Dimensions.get('window').width * 0.9,
+    backgroundColor: 'rgba(255, 255, 255, 0.69)',
+    borderRadius: 20,
+    alignSelf: 'center',
+    marginVertical: 20,
+  },
+  numberDisplay: {
+    fontSize: 100,
+    color: 'rgba(0, 0, 0, 0.05)',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    fontFamily: 'PixelFont',
+    justifyContent: 'center',
+    alignItems: 'center',
+    display: 'flex',
+    marginTop: 270,
+    marginLeft: -100,
+  },
+  apple: {
+    width: 30,
+    height: 30,
+    position: 'absolute',
+    resizeMode: 'contain',
+  },
+  appleEaten: {
+    opacity: 0,
+  },
+  pacman: {
+    width: 40,
+    height: 40,
+    position: 'absolute',
+    resizeMode: 'contain',
+  },
+  successMessage: {
+    position: 'absolute',
+    top: '40%',
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 20,
+  },
+  successText: {
+    fontSize: 24,
+    color: '#FFD700',
+    fontFamily: 'PixelFont',
+    marginBottom: 10,
+  },
+  successSubtext: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontFamily: 'PixelFont',
+  },
+  controls: {
+  alignItems: 'center', // centers everything
+  marginTop: -10,
+  padding: 20,
+},
+row: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  width: '80%', // control spacing of first two buttons
+  marginBottom: 15,
+},
+button: {
+  backgroundColor: '#1976D2',
+  paddingVertical: 12,
+  paddingHorizontal: 10,
+  borderRadius: 15,
+  width: 150, // adjust width
+  alignItems: 'center',
+  marginRight: 30,
+  marginLeft: -15,
+  elevation: 3,
+},
+centerButton: {
+  alignSelf: 'center',
+},
+  buttonDisabled: {
+    backgroundColor: '#666666',
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontFamily: 'PixelFont',
+    fontSize: 14,
+  },
 });

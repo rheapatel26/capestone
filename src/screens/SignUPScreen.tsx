@@ -31,7 +31,7 @@ type AppStackParamList = {
 type SignUpNavProp = NativeStackNavigationProp<AppStackParamList, "SignUP">;
 
 const ASSETS = {
-  background: require("../../assets/bg3.jpg"), // Adjust path as needed
+  background: require("../../assets/signupbg.png"), // Adjust path as needed
 };
 
 export default function SignUpScreen() {
@@ -218,7 +218,7 @@ export default function SignUpScreen() {
           </View>
 
           <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
-            <Text style={styles.linkText}>Already have an account? 👋 Sign In</Text>
+            <Text style={styles.linkText}>Already have an account? Sign In</Text>
           </TouchableOpacity>
 
           {/* Quick demo button for testing */}
@@ -257,18 +257,18 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: "#8A2BE2",
-    textShadowColor: "#4B0082",
+    fontSize: 40,
+    fontFamily: 'PixelFont',
+    color: "#5b00b1ff",
+    textShadowColor: "#7f7f7fff",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 5,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#DDA0DD",
     marginTop: 5,
-    fontWeight: '600',
+    fontFamily: 'PixelFont',
   },
   formContainer: {
     width: "100%",
@@ -284,17 +284,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   formTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontFamily: 'PixelFont',
     color: "#4B0082",
     marginBottom: 8,
     textAlign: 'center',
   },
   formSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#6A5ACD",
     marginBottom: 20,
+    lineHeight: 26,
     textAlign: 'center',
+    fontFamily: 'PixelFont',
   },
   input: {
     width: "100%",
@@ -304,6 +306,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     fontSize: 16,
+    fontFamily: 'PixelFont',
     borderWidth: 2,
     borderColor: "transparent",
   },
@@ -327,8 +330,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontFamily: 'PixelFont',
   },
   clearButton: {
     marginTop: 10,
@@ -337,15 +340,16 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     color: "#8A2BE2",
-    fontSize: 14,
+    fontSize: 12,
     textDecorationLine: "underline",
+    fontFamily: 'PixelFont',
   },
   linkText: {
-    color: "#E0B0FF",
+    color: "#55008eff",
     marginTop: 30,
-    fontSize: 16,
+    fontSize: 10,
     textDecorationLine: "underline",
-    fontWeight: '500',
+    fontFamily: 'PixelFont',
   },
   demoButton: {
     marginTop: 20,
@@ -357,8 +361,8 @@ const styles = StyleSheet.create({
     borderColor: "#8A2BE2",
   },
   demoButtonText: {
-    color: "#E0B0FF",
-    fontSize: 14,
-    fontWeight: '500',
+    color: "#39005fff",
+    fontSize: 10,
+    fontFamily: 'PixelFont',
   },
 });
