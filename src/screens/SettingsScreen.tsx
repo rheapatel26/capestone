@@ -19,8 +19,7 @@ const SettingRow = ({ icon, label, value, onValueChange }: { icon: any; label: s
 
 export default function SettingsScreen() {
   // const {isMusicEnabled, setIsMusicEnabled} = useContext(AudioContext);
-  const { enabled, setEnabled } = useContext(AudioContext);
-  const [isSfxEnabled, setIsSfxEnabled] = useState(true);
+  const { enabled, setEnabled, SFXenabled, setSFXenabled } = useContext(AudioContext);
   const [isTextToSpeechEnabled, setIsTextToSpeechEnabled] = useState(false);
 
   const handleResetPress = () => {
@@ -63,13 +62,13 @@ export default function SettingsScreen() {
           <SettingRow
             icon="volume-high"
             label="Sound Effects"
-            value={isSfxEnabled}
-            onValueChange={setIsSfxEnabled}
+            value={SFXenabled}
+            onValueChange={setSFXenabled}
           />
         </View>
 
         {/* --- Accessibility Card --- */}
-        <View style={styles.card}>
+        {/* <View style={styles.card}>
           <Text style={styles.sectionTitle}>Accessibility</Text>
           <SettingRow
             icon="text-to-speech"
@@ -77,7 +76,7 @@ export default function SettingsScreen() {
             value={isTextToSpeechEnabled}
             onValueChange={setIsTextToSpeechEnabled}
           />
-        </View>
+        </View> */}
 
         {/* --- Data Management Card --- */}
         <View style={styles.card}>
