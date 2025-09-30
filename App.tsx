@@ -14,6 +14,8 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import SignUPScreen from './src/screens/SignUPScreen';
 
+import { AudioProvider } from './src/context/MusicContext';
+
 // Games
 import DigitTracingGame from './src/games/DigitTracingGame';
 import ClockTimeGame from './src/games/ClockTimeGame';
@@ -85,26 +87,31 @@ function AppContent() {
   }
   
   return (
-    <NavigationContainer>
-      <Stack.Navigator 
-        initialRouteName={isAuthenticated ? "MainTabs" : "SignIn"}
-        screenOptions={{ headerShown: false }} // ✅ hides TOP nav bar everywhere
-      >
-        {/* Auth Screens */}
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="SignUP" component={SignUPScreen} />
-        
-        {/* Main App Screens */}
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        
-        {/* Game Screens */}
-        <Stack.Screen name="DigitTracingGame" component={DigitTracingGame} />
-        <Stack.Screen name="ClockTimeGame" component={ClockTimeGame} />
-        <Stack.Screen name="BubbleCountingGame" component={BubbleCountingGame} />
-        <Stack.Screen name="AddSubBubblesGame" component={AddSubBubblesGame} />
-        <Stack.Screen name="MoneyConceptGame" component={MoneyConceptGame} />
-      </Stack.Navigator>
-    </NavigationContainer>
+
+    <AudioProvider>
+      <NavigationContainer>
+        <Stack.Navigator 
+          
+          initialRouteName={isAuthenticated ? "MainTabs" : "SignIn"}
+          screenOptions={{ headerShown: false }} // ✅ hides TOP nav bar everywhere
+          >
+          {/* Auth Screens */}
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="SignUP" component={SignUPScreen} />
+          
+          {/* Main App Screens */}
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          
+          {/* Game Screens */}
+          <Stack.Screen name="DigitTracingGame" component={DigitTracingGame} />
+          <Stack.Screen name="ClockTimeGame" component={ClockTimeGame} />
+          <Stack.Screen name="BubbleCountingGame" component={BubbleCountingGame} />
+          <Stack.Screen name="AddSubBubblesGame" component={AddSubBubblesGame} />
+          <Stack.Screen name="MoneyConceptGame" component={MoneyConceptGame} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AudioProvider>
+
   );
 }
 
