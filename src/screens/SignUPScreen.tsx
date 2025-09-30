@@ -14,6 +14,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CommonActions } from '@react-navigation/native';
+import { useUser } from '../context/UserContext';
 
 // Define the types for your navigation stack
 type AppStackParamList = {
@@ -36,26 +37,34 @@ const ASSETS = {
 
 export default function SignUpScreen() {
   const navigation = useNavigation<SignUpNavProp>();
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { signUp, isLoading, error } = useUser();
 
   // Form validation
   const validateForm = () => {
-    if (!name.trim()) {
-      Alert.alert("Validation Error", "Please enter your name.");
+    if (!username.trim()) {
+      Alert.alert("Validation Error", "Please enter a username.");
       return false;
     }
     
-    if (!age.trim() || isNaN(Number(age)) || Number(age) < 1 || Number(age) > 120) {
-      Alert.alert("Validation Error", "Please enter a valid age (1-120).");
+    if (!email.trim()) {
+      Alert.alert("Validation Error", "Please enter an email address.");
+      return false;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Validation Error", "Please enter a valid email address.");
       return false;
     }
     
-    if (password.length < 4) {
-      Alert.alert("Validation Error", "Password must be at least 4 characters long.");
+    if (password.length < 6) {
+      Alert.alert("Validation Error", "Password must be at least 6 characters long.");
       return false;
     }
     
@@ -67,74 +76,38 @@ export default function SignUpScreen() {
     return true;
   };
 
-  // Store user data (in a real app, this would be sent to a backend)
-  const storeUserData = async (userData: any) => {
-    try {
-      // In a real app, you might use AsyncStorage or send to backend
-      // For now, we'll just simulate a successful signup
-      
-      // Example of how you might store locally:
-      // import AsyncStorage from '@react-native-async-storage/async-storage';
-      // await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      
-      console.log('User data stored:', userData);
-      return true;
-    } catch (error) {
-      console.error('Error storing user data:', error);
-      return false;
-    }
-  };
-
+  // Handle sign-up
   const handleSignUp = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
+    if (!validateForm()) return;
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const userData = {
-        name: name.trim(),
-        age: Number(age),
-        password: password, // In real app, this should be hashed
-        createdAt: new Date().toISOString(),
-        id: Date.now().toString(), // Simple ID generation
-      };
-
-      const success = await storeUserData(userData);
-
-      if (success) {
-        Alert.alert(
-          "Welcome to MATH.IO!", 
-          `Great to have you, ${name}! Your account has been created successfully. Let's start your mathematical adventure!`,
-          [
-            {
-              text: "Start Learning!",
-              onPress: () => {
-                // Navigate directly to MainTabs after successful signup
-                navigation.navigate('MainTabs');
-              }
-            }
-          ]
-        );
-      } else {
-        Alert.alert("Error", "Failed to create account. Please try again.");
-      }
+      await signUp({ username: username.trim(), email: email.trim(), password });
+      
+      Alert.alert("Success", "Account created successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
+            clearForm();
+            // Navigate to Dashboard after successful signup
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Dashboard' }],
+              })
+            );
+          },
+        },
+      ]);
     } catch (error) {
-      console.error('Signup error:', error);
-      Alert.alert("Error", "An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error("Sign up error:", error);
+      Alert.alert("Error", "Failed to create account. Please try again.");
     }
   };
 
   // Clear form
   const clearForm = () => {
-    setName('');
-    setAge('');
+    setUsername('');
+    setEmail('');
     setPassword('');
     setConfirmPassword('');
   };
@@ -161,28 +134,28 @@ export default function SignUpScreen() {
             
             <TextInput
               style={styles.input}
-              placeholder="What's your name?"
+              placeholder="Choose a username"
               placeholderTextColor="#A0A0A0"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
               returnKeyType="next"
             />
             
             <TextInput
               style={styles.input}
-              placeholder="How old are you?"
+              placeholder="Enter your email"
               placeholderTextColor="#A0A0A0"
-              value={age}
-              onChangeText={setAge}
-              keyboardType="numeric"
-              maxLength={3}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
               returnKeyType="next"
             />
             
             <TextInput
               style={styles.input}
-              placeholder="Create a secret password (min 4 characters)"
+              placeholder="Create a secret password (min 6 characters)"
               placeholderTextColor="#A0A0A0"
               value={password}
               onChangeText={setPassword}
@@ -211,6 +184,10 @@ export default function SignUpScreen() {
               </Text>
             </TouchableOpacity>
 
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
+
             {/* Clear form button */}
             <TouchableOpacity style={styles.clearButton} onPress={clearForm}>
               <Text style={styles.clearButtonText}>🗑️ Clear Form</Text>
@@ -225,10 +202,10 @@ export default function SignUpScreen() {
           <TouchableOpacity 
             style={styles.demoButton} 
             onPress={() => {
-              setName('Alex');
-              setAge('8');
-              setPassword('demo');
-              setConfirmPassword('demo');
+              setUsername('demo_user');
+              setEmail('demo@example.com');
+              setPassword('demo123');
+              setConfirmPassword('demo123');
             }}
           >
             <Text style={styles.demoButtonText}>⚡ Fill Demo Data</Text>
@@ -364,5 +341,14 @@ const styles = StyleSheet.create({
     color: "#39005fff",
     fontSize: 10,
     fontFamily: 'PixelFont',
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    padding: 8,
+    borderRadius: 5,
   },
 });

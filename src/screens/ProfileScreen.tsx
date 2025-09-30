@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
 
 // --- Type Definitions for our data ---
 interface GameStat {
@@ -100,13 +101,86 @@ const GameReportCard = ({ gameStat }: { gameStat: GameStat }) => {
 };
 
 // --- Main Profile Screen Component ---
+// Function to calculate game statistics from backend user data
+function calculateGameStats(user: any): GameStat[] {
+  const gameMapping = {
+    'Game1': 'Bubble Counting',
+    'Game2': 'Digit Tracing', 
+    'Game3': 'Clock Time',
+    'Game4': 'Money Concept',
+    'Game5': 'Add/Sub Bubbles',
+  };
+
+  const gameStats: GameStat[] = [];
+
+  Object.entries(gameMapping).forEach(([gameKey, gameName]) => {
+    const gameData = user[gameKey];
+    if (!gameData) return;
+
+    let attempts = 0;
+    let independentSolutions = 0;
+    let hintSolutions = 0;
+    let needsPractice = 0;
+    let currentLevel = 1;
+
+    // Process each level
+    Object.entries(gameData).forEach(([levelKey, levelData]: [string, any]) => {
+      if (levelData) {
+        attempts += levelData.correct_attempts + levelData.incorrect;
+        
+        if (levelData.correct_attempts > 0) {
+          if (levelData.hints_used === 0 && !levelData.solution_used) {
+            independentSolutions += levelData.correct_attempts;
+          } else {
+            hintSolutions += levelData.correct_attempts;
+          }
+          
+          // Update current level
+          const levelNum = parseInt(levelKey.replace('level', ''));
+          if (levelNum > currentLevel) {
+            currentLevel = levelNum;
+          }
+        }
+        
+        if (levelData.incorrect > 3) {
+          needsPractice++;
+        }
+      }
+    });
+
+    gameStats.push({
+      gameId: gameKey,
+      gameName,
+      attempts,
+      currentLevel,
+      maxLevel: 5,
+      independentSolutions,
+      hintSolutions,
+      needsPractice,
+    });
+  });
+
+  return gameStats;
+}
+
 export default function ProfileScreen() {
-  const stats = hardcodedStats;
-  const allGameStats = Object.values(stats.statsByGame);
-  const totalGamesPlayed = allGameStats.length;
-  const totalIndependent = allGameStats.reduce((sum, game) => sum + game.independentSolutions, 0);
-  const totalWithHints = allGameStats.reduce((sum, game) => sum + game.hintSolutions, 0);
-  const totalNeedsPractice = allGameStats.reduce((sum, game) => sum + game.needsPractice, 0);
+  const { user, logout, refreshUser } = useUser();
+
+  // Since authentication is now handled at app level, user should always exist here
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Calculate stats from backend user data
+  const gameStats = calculateGameStats(user);
+  const totalGamesPlayed = gameStats.length;
+  const totalIndependent = gameStats.reduce((sum, game) => sum + game.independentSolutions, 0);
+  const totalWithHints = gameStats.reduce((sum, game) => sum + game.hintSolutions, 0);
+  const totalNeedsPractice = gameStats.reduce((sum, game) => sum + game.needsPractice, 0);
   const totalProblemsAttempted = totalIndependent + totalWithHints + totalNeedsPractice;
   const totalSolutions = totalIndependent + totalWithHints;
   const independenceRate = totalSolutions > 0 ? Math.round((totalIndependent / totalSolutions) * 100) : 0;
@@ -120,10 +194,10 @@ export default function ProfileScreen() {
       {/* Overlay to make text readable */}
       <View style={styles.overlay}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>{stats.userName}'s Learning Journey</Text>
+          <Text style={styles.title}>{user.username}'s Learning Journey</Text>
           <View style={styles.dateContainer}>
             <MaterialCommunityIcons name="calendar-blank" size={16} color="#4D8080" />
-            <Text style={styles.subtitle}>Last active: {stats.lastActive}</Text>
+            <Text style={styles.subtitle}>Last active: Today</Text>
           </View>
           
           {/* Overall Stats */}
@@ -143,7 +217,7 @@ export default function ProfileScreen() {
 
           {/* Game-by-Game Reports Title */}
           <Text style={styles.reportsTitle}>Game-by-Game Reports</Text>
-          {allGameStats.map(gameStat => (
+          {gameStats.map((gameStat: GameStat) => (
             <GameReportCard key={gameStat.gameId} gameStat={gameStat} />
           ))}
         </ScrollView>
@@ -154,6 +228,12 @@ export default function ProfileScreen() {
 
 // --- NEW STYLESHEET (Dashboard Theme Applied) ---
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
   bg: {
     flex: 1,
     width: '100%',

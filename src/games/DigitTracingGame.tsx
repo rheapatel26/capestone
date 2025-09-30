@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Dimensions, Image } from 'react-native';
 
-const ASSETS = {
-  pacman: require('../../assets/1.png'),
-  apple: require('../../assets/apple.png'),
-};
 
 // Scale coordinates to fit the game area
 const scaleCoordinates = (paths: [number, number][], screenWidth: number) => {

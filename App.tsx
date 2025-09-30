@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Image } from 'react-native';
 
+// Context
+import { UserProvider, useUser } from './src/context/UserContext';
+
 // Screens
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -74,13 +77,22 @@ function MainTabs() {
   );
 }
 
-// Main App Component with simple linear navigation
-export default function App() {
+// Component that handles authentication flow
+function AppContent() {
+  const { isAuthenticated, isLoading } = useUser();
+  
+  // Show loading or determine which screen to show
+  if (isLoading) {
+    return null; // or a loading screen
+  }
+  
   return (
+
     <AudioProvider>
       <NavigationContainer>
         <Stack.Navigator 
-          initialRouteName="SignIn"
+          
+          initialRouteName={isAuthenticated ? "MainTabs" : "SignIn"}
           screenOptions={{ headerShown: false }} // ✅ hides TOP nav bar everywhere
           >
           {/* Auth Screens */}
@@ -99,5 +111,15 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </AudioProvider>
+
+  );
+}
+
+// Main App Component
+export default function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
   );
 }
