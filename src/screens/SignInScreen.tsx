@@ -12,6 +12,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 // import { Video } from "expo-av";
 import { Video, ResizeMode } from 'expo-av';
 
+// import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEvent } from 'expo';
 
 // Define the types for your authentication stack
 type AuthStackParamList = {
@@ -24,11 +27,20 @@ type SignInNavProp = NativeStackNavigationProp<AuthStackParamList, "SignIn">;
 const ASSETS = {
   background: require("../../assets/bg3_temp.mp4"), // Adjust path as needed
 };
+const videoSource = '../../assets/bg3_temp.mp4';
 
 export default function SignInScreen() {
   const navigation = useNavigation<SignInNavProp>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  //use updated expo-video instead of deprecated expo-av
+  const player = useVideoPlayer(videoSource, player => {
+    player.loop = true;
+    player.play();
+  });
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+
   const videoRef = useRef<Video>(null);
 
   const handleSignIn = () => {
@@ -38,7 +50,7 @@ export default function SignInScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Video */}
+      {/* Background Video - deprecated expo-av*/}
       <Video
         ref={videoRef}
         source={ASSETS.background}
@@ -48,6 +60,7 @@ export default function SignInScreen() {
         isLooping
         isMuted
       />
+      {/* <VideoView style={StyleSheet.absoluteFillObject} player={player}/> */}
 
       {/* Overlay content */}
       {/* <Text style={styles.title}>MATH.IO</Text>

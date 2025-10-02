@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -10,21 +11,22 @@ import {
   Dimensions,
   PanResponder,
 } from 'react-native';
+
 import { Image as ExpoImage } from 'expo-image';
 import { GameFlowManager } from '../utils/GameFlowManager';
+const { width } = Dimensions.get('window');
+const CLOCK_SIZE = Math.min(width, 420) * 0.85;
+const CENTER = CLOCK_SIZE / 2.1;
 
-// ---------- ASSETS ----------
 const ASSETS = {
-  background: require('../../assets/clockgame/clockgame_bg.png'),
+  bg: require('../../assets/clockgame/clockgame_bg.png'),
+  clockFace: require('../../assets/clockgame/clock_face_pixel.png'),
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
   submit: require('../../assets/ui/icon_submit.png'),
   celebrate: require('../../assets/ui/Confetti.gif'),
   incorrect: require('../../assets/ui/icon_wrong.gif'),
-  clockFace: require('../../assets/clockgame/clock_face_pixel.png'),
-  hourHand: require('../../assets/clockgame/hour_hand_pixel.png'),
-  minuteHand: require('../../assets/clockgame/minute_hand_pixel.png'),
 };
 
 const LEVELS = [
@@ -36,18 +38,10 @@ const LEVELS = [
   { id: 6, name: 'Real Life Scenarios', minuteOptions: 'all' },
 ];
 
-const { width } = Dimensions.get('window');
-const CLOCK_SIZE = Math.min(width, 420) * 0.85;
-const CENTER = CLOCK_SIZE / 2;
-
 function angleForTime(hours: number, minutes: number) {
   const hourAngle = (hours % 12) * 30 + (minutes / 60) * 30;
   const minuteAngle = (minutes / 60) * 360;
   return { hourAngle, minuteAngle };
-}
-
-function snapMinuteToStep(rawMinutes: number, step = 5) {
-  return (Math.round(rawMinutes / step) * step) % 60;
 }
 
 function polarToAngle(x: number, y: number) {
@@ -55,89 +49,74 @@ function polarToAngle(x: number, y: number) {
   const dy = y - CENTER;
   const rad = Math.atan2(dy, dx);
   const degFromRight = (rad * 180) / Math.PI;
-  return (degFromRight + 90 + 360) % 360;
+  const degFromTop = (degFromRight + 90 + 360) % 360;
+  return degFromTop;
 }
 
 export default function ClockTimeGame() {
   const [levelIndex, setLevelIndex] = useState(0);
   const levelSpec = LEVELS[levelIndex];
-
-  const [target, setTarget] = useState({ hours: 4, minutes: 0 });
+  const [target, setTarget] = useState({ hours: 3, minutes: 0 });
   const [userTime, setUserTime] = useState({ hours: 12, minutes: 0 });
 
   const hourAnim = useRef(new Animated.Value(0)).current;
   const minuteAnim = useRef(new Animated.Value(0)).current;
 
-  const [highlightHour, setHighlightHour] = useState(false);
-  const [highlightMinute, setHighlightMinute] = useState(false);
-
+  const hourPan = useRef({ dragging: false }).current;
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [showIncorrect, setShowIncorrect] = useState(false);
 
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
+  const [hintVisible, setHintVisible] = useState(false);
   const managerRef = useRef(new GameFlowManager()).current;
   const minutePan = useRef({ dragging: false }).current;
-  const hourPan = useRef({ dragging: false }).current;
 
   useEffect(() => {
-    startNewProblem();
+    randomizeTarget();
   }, [levelIndex]);
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.3, duration: 500, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
 
   useEffect(() => {
     const { hourAngle, minuteAngle } = angleForTime(userTime.hours, userTime.minutes);
     if (!hourPan.dragging) {
-      Animated.timing(hourAnim, { toValue: hourAngle, duration: 200, useNativeDriver: false }).start();
+      Animated.timing(hourAnim, {
+        toValue: hourAngle,
+        duration: 200,
+        useNativeDriver: false,
+        easing: Easing.out(Easing.cubic),
+      }).start();
     }
     if (!minutePan.dragging) {
-      Animated.timing(minuteAnim, { toValue: minuteAngle, duration: 200, useNativeDriver: false }).start();
+      Animated.timing(minuteAnim, {
+        toValue: minuteAngle,
+        duration: 200,
+        useNativeDriver: false,
+        easing: Easing.out(Easing.cubic),
+      }).start();
     }
   }, [userTime]);
 
-  function startNewProblem() {
+  const randomizeTarget = () => {
     const hour = Math.floor(Math.random() * 12) + 1;
     let minute = 0;
-
     if (levelSpec.minuteOptions === 'hourOnly') {
       minute = 0;
     } else if (levelSpec.minuteOptions === 'all') {
-      minute = Math.floor(Math.random() * 12) * 5;
+      minute = Math.floor(Math.random() * 60);
     } else if (Array.isArray(levelSpec.minuteOptions)) {
       minute = levelSpec.minuteOptions[Math.floor(Math.random() * levelSpec.minuteOptions.length)];
     }
-
     setTarget({ hours: hour, minutes: minute });
     setUserTime({ hours: 12, minutes: 0 });
-    setHighlightHour(false);
-    setHighlightMinute(false);
-    managerRef.resetLevel();
-  }
-
-  function checkAnswer() {
-    const correct = target.hours === userTime.hours && target.minutes === userTime.minutes;
-    managerRef.recordAttempt(correct);
-    if (correct) triggerCelebrate();
-    else triggerIncorrect();
-  }
-
+  };
   function triggerCelebrate() {
     setShowCelebrate(true);
     Animated.spring(celebrateAnim, { toValue: 1, useNativeDriver: true }).start(() => {
       setTimeout(() => {
         Animated.spring(celebrateAnim, { toValue: 0, useNativeDriver: true }).start(() => {
           setShowCelebrate(false);
-          startNewProblem();
+          // randomizeTarget();
         });
       }, 2000);
     });
@@ -154,60 +133,83 @@ export default function ClockTimeGame() {
     });
   }
 
-  function showHint() {
-    managerRef.updateHints();
-    if (managerRef.hintLevel === 1) setHighlightHour(true);
-    else if (managerRef.hintLevel === 2) {
-      setHighlightHour(true);
-      setHighlightMinute(true);
-    } else if (managerRef.hintLevel === 3) {
-      setHighlightHour(true);
-      setHighlightMinute(true);
-      setUserTime({ hours: target.hours, minutes: target.minutes });
-    }
-  }
+  const showHint = () => {
+    // alert(`Hint: Set to ${target.hours}:${target.minutes.toString().padStart(2, '0')}`);
+    setHintVisible(true);
+    setTimeout(() => setHintVisible(false), 3000); // hide after 3 seconds
+    
 
-  function playSolutionAnimation() {
-    managerRef.hintLevel = 3;
-    managerRef.status = 'dependent';
+  };
+
+  const playSolutionAnimation = () => {
     const { hourAngle, minuteAngle } = angleForTime(target.hours, target.minutes);
     Animated.parallel([
-      Animated.timing(minuteAnim, { toValue: minuteAngle, duration: 700, useNativeDriver: false }),
-      Animated.timing(hourAnim, { toValue: hourAngle, duration: 700, useNativeDriver: false }),
-    ]).start();
-  }
+      Animated.timing(hourAnim, {
+        toValue: hourAngle,
+        duration: 700,
+        useNativeDriver: false,
+        easing: Easing.inOut(Easing.cubic),
+      }),
+      Animated.timing(minuteAnim, {
+        toValue: minuteAngle,
+        duration: 700,
+        useNativeDriver: false,
+        easing: Easing.inOut(Easing.cubic),
+      }),
+    ]).start(() => {
+      setUserTime({ ...target });
+    });
+  };
 
-  // Minute Hand Drag
-  const minuteResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => { minutePan.dragging = true; },
-      onPanResponderMove: (_, g) => {
-        if (levelSpec.minuteOptions === 'hourOnly') return;
-        const x = g.moveX - (Dimensions.get('window').width - CLOCK_SIZE) / 2;
-        const y = g.moveY - 60;
-        const rawAngle = polarToAngle(x, y);
-        const minutes = Math.round((rawAngle / 360) * 60) % 60;
-        setUserTime(prev => ({ ...prev, minutes: snapMinuteToStep(minutes, 5) }));
-      },
-      onPanResponderRelease: () => { minutePan.dragging = false; },
-    })
-  ).current;
+  const checkAnswer = () => {
+    const { hours: th, minutes: tm } = target;
+    const { hours: uh, minutes: um } = userTime;
 
-  // Hour Hand Drag
+    // const hourOk = Math.abs(((uh % 12) + um / 60) - (th % 12)) < 0.51;
+    // const minuteOk = Math.abs(um - tm) === 0;
+
+    return target.minutes === userTime.minutes && target.hours === userTime.hours;
+  };
+
+  const onSubmit = () => {
+    if (checkAnswer()) {
+      
+      if(levelIndex < LEVELS.length - 1){
+        setLevelIndex(levelIndex+1);
+      }
+      else{
+        randomizeTarget();
+      }
+      triggerCelebrate();
+    }
+    else{
+      triggerIncorrect(); 
+    }
+    
+    managerRef.recordAttempt(checkAnswer());
+  };
+
   const hourResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => { hourPan.dragging = true; },
-      onPanResponderMove: (_, g) => {
-        const x = g.moveX - (Dimensions.get('window').width - CLOCK_SIZE) / 2;
-        const y = g.moveY - 60;
-        const rawAngle = polarToAngle(x, y);
-        const hourFloat = ((rawAngle / 360) * 12) % 12;
-        let hour = Math.floor(hourFloat) || 12;
+      onPanResponderMove: (_, gesture) => {
+        const angle = polarToAngle(gesture.moveX - 24, gesture.moveY - 150);
+        let hourFloat = ((angle / 360) * 12) % 12;
+        let hour = Math.round(hourFloat);
+        if (hour === 0) hour = 12;
         setUserTime(prev => ({ ...prev, hours: hour }));
       },
-      onPanResponderRelease: () => { hourPan.dragging = false; },
+    })
+  ).current;
+
+  const minuteResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        const angle = polarToAngle(gesture.moveX - 24, gesture.moveY - 150);
+        let minute = Math.round((angle / 360) * 60) % 60;
+        setUserTime(prev => ({ ...prev, minutes: minute }));
+      },
     })
   ).current;
 
@@ -216,34 +218,63 @@ export default function ClockTimeGame() {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={ASSETS.background}
+      <Image 
+        source={ASSETS.bg} 
         style={[
           StyleSheet.absoluteFillObject,
           { width: '100%', height: '100%', resizeMode: 'stretch' }
-        ]}
+        ]}  
       />
+      <Text style={styles.levelText}>Level {levelSpec.id}: {levelSpec.name}</Text>
+
       <Text style={styles.question}>Set the clock to {target.hours}:{target.minutes.toString().padStart(2, '0')}</Text>
+      <Text style={styles.userTime}>You set: {userTime.hours}:{userTime.minutes.toString().padStart(2, '0')}</Text>
 
       <View style={styles.clockWrap}>
-        <Image source={ASSETS.clockFace} style={{ width: CLOCK_SIZE, height: CLOCK_SIZE, position: 'absolute' }} />
+        <Image source={ASSETS.clockFace} style={styles.clockFace} />
+        {hintVisible && (
+          <>
+            {/* Glow for minute hand tip */}
+            <View style={[
+              styles.glowCircle,
+              {
+                transform: [
+                  { rotate: `${angleForTime(0, target.minutes).minuteAngle}deg` },
+                  { translateY: -CLOCK_SIZE * 0.4 },
+                ],
+              }
+            ]} />
 
-        <Animated.View style={[styles.handWrap, { transform: [{ rotate: minuteRotate }] }]} {...minuteResponder.panHandlers}>
-          <Image source={ASSETS.minuteHand} style={styles.minuteHand} />
-        </Animated.View>
+            {/* Glow for hour hand tip */}
+            <View style={[
+              styles.glowCircle,
+              {
+                transform: [
+                  { rotate: `${angleForTime(target.hours, target.minutes).hourAngle}deg` },
+                  { translateY: -CLOCK_SIZE * 0.25 },
+                ],
+              }
+            ]} />
+          </>
+        )}
 
-        <Animated.View style={[styles.handWrap, { transform: [{ rotate: hourRotate }] }]} {...hourResponder.panHandlers}>
-          <Image source={ASSETS.hourHand} style={styles.hourHand} />
-        </Animated.View>
+        
+        <Animated.View
+          style={[styles.hand, styles.minuteHand, { transform: [{ rotate: minuteRotate }] }]}
+          {...minuteResponder.panHandlers}
+        />
+        <Animated.View
+          style={[styles.hand, styles.hourHand, { transform: [{ rotate: hourRotate }] }]}
+          {...hourResponder.panHandlers}
+        />
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity onPress={startNewProblem}><Image source={ASSETS.reset} style={styles.icon} /></TouchableOpacity>
+        <TouchableOpacity onPress={randomizeTarget}><Image source={ASSETS.reset} style={styles.icon} /></TouchableOpacity>
         <TouchableOpacity onPress={showHint}><Image source={ASSETS.hint} style={styles.icon} /></TouchableOpacity>
         <TouchableOpacity onPress={playSolutionAnimation}><Image source={ASSETS.solution} style={styles.icon} /></TouchableOpacity>
-        <TouchableOpacity onPress={checkAnswer}><Image source={ASSETS.submit} style={styles.icon} /></TouchableOpacity>
+        <TouchableOpacity onPress={onSubmit}><Image source={ASSETS.submit} style={styles.icon} /></TouchableOpacity>
       </View>
-
       {showCelebrate && (
         <Animated.View style={[styles.overlay, { transform: [{ scale: celebrateAnim }] }]}>
           <ExpoImage source={ASSETS.celebrate} style={styles.overlayImage} autoplay />
@@ -255,6 +286,7 @@ export default function ClockTimeGame() {
         </Animated.View>
       )}
     </View>
+    
   );
 }
 
@@ -266,14 +298,44 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     fontFamily: 'PixelFont',
     textAlign: 'center',
-    marginTop: 180,
+    marginTop: 150,
   },
-  clockWrap: { width: CLOCK_SIZE, height: CLOCK_SIZE, marginTop: 20, alignItems: 'center', justifyContent: 'center' },
-  handWrap: { position: 'absolute', width: CLOCK_SIZE, height: CLOCK_SIZE, alignItems: 'center', justifyContent: 'flex-start' },
-  hourHand: { width: CLOCK_SIZE * 0.22, height: CLOCK_SIZE * 0.35, resizeMode: 'contain', marginTop: CLOCK_SIZE * 0.15 },
-  minuteHand: { width: CLOCK_SIZE * 0.16, height: CLOCK_SIZE * 0.45, resizeMode: 'contain', marginTop: CLOCK_SIZE * 0.05 },
+  clockWrap: { width: CLOCK_SIZE, height: CLOCK_SIZE, justifyContent: 'center', alignItems: 'center' },
+  clockFace: { width: CLOCK_SIZE, height: CLOCK_SIZE, position: 'absolute' },
+  hand: {
+    position: 'absolute',
+    transformOrigin: 'bottom',
+    bottom: CENTER,
+    width: 10,
+    borderRadius: 5,
+  },
+  hourHand: {
+    height: CLOCK_SIZE * 0.3,
+    backgroundColor: '#FFD700',
+
+  },
+  minuteHand: {
+    height: CLOCK_SIZE * 0.4,
+    backgroundColor: '#00BFFF',
+
+  },
+  prompt: { color: '#fff', fontSize: 20, marginTop: 12 },
+  userTime: { color: 'darkblue',fontFamily:"PixelFont", fontSize: 14, marginTop: 8 },
+  levelText: { color: '#a1dd', fontSize: 16, fontFamily:'PixelFont', marginTop:25 },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-evenly', width: '100%', position: 'absolute', bottom: 0, backgroundColor: 'rgba(246, 203, 85, 0.8)', borderRadius: 5, padding:14 },
-  icon: { width: 50, height: 50 },
+  icon: { width: 50, height: 50, marginHorizontal: 16 },
   overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },
   overlayImage: { width: 150, height: 150, resizeMode: 'contain' },
+
+  glowCircle: {
+    position: 'absolute',
+    top: CENTER,
+    left: CENTER - 10,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 0, 0.6)',
+    zIndex: 10,
+  }
+
 });
