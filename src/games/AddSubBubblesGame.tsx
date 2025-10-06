@@ -7,7 +7,20 @@ const { width, height } = Dimensions.get('window');
 
 const ASSETS = {
   background: require('../../assets/addsub/addsub_bg1.png'),
+
   bubble: require('../../assets/bubbleCount/icons8-bubble-100.png'),
+  bubbles: [
+    require('../../assets/addsub/UI_bubbles/1.png'),  // for 0
+    require('../../assets/addsub/UI_bubbles/2.png'), // 1
+    require('../../assets/addsub/UI_bubbles/3.png'),  // 2
+    require('../../assets/addsub/UI_bubbles/4.png'), // 3
+    require('../../assets/addsub/UI_bubbles/5.png'), // 4
+    require('../../assets/addsub/UI_bubbles/6.png'), // 5
+    require('../../assets/addsub/UI_bubbles/7.png'),  // 6
+    require('../../assets/addsub/UI_bubbles/8.png'), // 7
+    require('../../assets/addsub/UI_bubbles/9.png'), // 8
+    require('../../assets/addsub/UI_bubbles/10.png'), // 9
+  ],
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
   solution: require('../../assets/ui/solution.png'),
@@ -310,7 +323,7 @@ export default function AddSubBubblesGame() {
               style={styles.trayBubble}
               onPress={() => removeBubbleFromTray(bubble.id)}
             >
-              <Image source={ASSETS.bubble} style={styles.bubbleImage} />
+              <Image source={ASSETS.bubbles[bubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
               <Text style={styles.bubbleValue}>{bubble.value}</Text>
             </TouchableOpacity>
           ))}
@@ -345,7 +358,7 @@ export default function AddSubBubblesGame() {
               onPress={() => addBubbleToTray(bubble.id)}
               activeOpacity={0.7}
             >
-              <Image source={ASSETS.bubble} style={styles.bubbleImage} />
+              <Image source={ASSETS.bubbles[bubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
               <Text style={styles.bubbleValue}>{bubble.value}</Text>
             </TouchableOpacity>
           ))}
@@ -371,7 +384,8 @@ export default function AddSubBubblesGame() {
       {/* Flying bubble animation overlay */}
       {flyingBubble?.visible && (
         <Animated.View style={[styles.flyingBubble, { left: flyingBubble.animX, top: flyingBubble.animY }]}> 
-          <Image source={ASSETS.bubble} style={styles.bubbleImage} />
+          {/* <Image source={ASSETS.bubble} style={styles.bubbleImage} /> */}
+          <Image source={ASSETS.bubbles[flyingBubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
           <Text style={styles.bubbleValue}>{flyingBubble.value}</Text>
         </Animated.View>
       )}

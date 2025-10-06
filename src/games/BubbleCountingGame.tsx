@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image'; // For GIF playback
 import { GameFlowManager } from '../utils/GameFlowManager';
 
 import { useAudioPlayer } from 'expo-audio';
+import { AudioContext } from '../context/MusicContext';
 const popSound = require('../../assets/sound/bubble-pop.mp3');
 const { width, height } = Dimensions.get('window');
 
@@ -38,6 +39,8 @@ export default function BubbleCountingGame() {
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const popPlayer = useAudioPlayer(popSound);
+
+  const {SFXenabled} = useContext(AudioContext);
 
   useEffect(() => {
     startNewProblem();
@@ -78,7 +81,8 @@ export default function BubbleCountingGame() {
       highlighted: false,
       x: Math.random() * (containerWidth - 60),   // 60 = bubble size
       y: Math.random() * (containerHeight - 60),
-      colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length)
+      // colorIndex: Math.floor(Math.random() * ASSETS.bubbles.length) #use only first bubble
+      colorIndex: 0
     }));
     setBubbles(newBubbles);
   }
@@ -88,8 +92,10 @@ export default function BubbleCountingGame() {
       prev.map(b => {
         if (b.id === id && !b.popped) {
           setPoppedCount(prevCount => prevCount + 1);
-          popPlayer.seekTo(0); // rewind to start
-          popPlayer.play();     // play the pop sound
+          if(SFXenabled){
+            popPlayer.seekTo(0); // rewind to start
+            popPlayer.play();     // play the pop sound
+          }
           return { ...b, popped: true, highlighted: false };
         }
         return b;

@@ -45,9 +45,10 @@ const NOTE_IMGS: Record<number, any> = {
 
 // Optional real-life items for L3+ (replace with your own PNGs)
 const ITEM_IMGS: Array<{ name: string; priceRange: [number, number]; src: any }> = [
-  { name: 'Milk', priceRange: [20, 60], src: require('../../assets/moneygame/items/milk.png') },
-  { name: 'Bread', priceRange: [20, 60], src: require('../../assets/moneygame/items/bread.png') },
-  { name: 'Pencil', priceRange: [5, 20], src: require('../../assets/moneygame/items/pencil.png') },
+  { name: 'Milk', priceRange: [20, 260], src: require('../../assets/moneygame/items/milk.png') },
+  { name: 'Bread', priceRange: [20, 260], src: require('../../assets/moneygame/items/bread.png') },
+  { name: 'Pencil', priceRange: [5, 100], src: require('../../assets/moneygame/items/pencil.png') },
+  { name: 'Shoes', priceRange: [300, 1500], src: require('../../assets/moneygame/items/shoes.png') },
 ];
 
 // ---------- LEVELS ----------
@@ -62,15 +63,15 @@ const LEVELS: LevelSpec[] = [
   // L1: Recognition – we still implement via "make X rupees" with very small target using single denomination
   { id: 1, name: 'Denomination Recognition', pool: [1, 2, 5, 10], targetRange: [1, 10], showItem: false },
   // L2: Coins only small sums
-  { id: 2, name: 'Add with Coins', pool: [1, 2, 5, 10, 20], targetRange: [6, 30], showItem: false },
+  { id: 2, name: 'Add with Coins', pool: [1, 2, 5, 10, 20], targetRange: [10, 30], showItem: false },
   // L3: Mixed (introduce Rs10, Rs20 notes with coins)
-  { id: 3, name: 'Coins + Small Notes', pool: [1, 2, 5, 10, 20, 50], targetRange: [15, 60], showItem: true },
+  { id: 3, name: 'Coins + Small Notes', pool: [1, 2, 5, 10, 20, 50], targetRange: [30, 60], showItem: true },
   // L4: Larger values with objects
-  { id: 4, name: 'Larger Values', pool: [1, 2, 5, 10, 20, 50, 100], targetRange: [25, 120], showItem: true },
+  { id: 4, name: 'Larger Values', pool: [1, 2, 5, 10, 20, 50, 100], targetRange: [60, 150], showItem: true },
   // L5: Multi-item context (we randomize higher sums)
-  { id: 5, name: 'Context Purchases', pool: [1, 2, 5, 10, 20, 50, 100], targetRange: [40, 150], showItem: true },
+  { id: 5, name: 'Context Purchases', pool: [1, 2, 5, 10, 20, 50, 100], targetRange: [150, 300], showItem: true },
   // L6+: Very large sums, include 500
-  { id: 6, name: 'Big Sums', pool: [1, 2, 5, 10, 20, 50, 100, 500], targetRange: [80, 600], showItem: true },
+  { id: 6, name: 'Big Sums', pool: [1, 2, 5, 10, 20, 50, 100, 500], targetRange: [300, 600], showItem: true },
 ];
 
 // ---------- HELPERS ----------
