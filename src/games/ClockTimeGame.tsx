@@ -34,8 +34,8 @@ const LEVELS = [
   { id: 2, name: 'Whole Hours', minuteOptions: [0] },
   { id: 3, name: 'Half Hours', minuteOptions: [30] },
   { id: 4, name: 'Quarter Hours', minuteOptions: [0, 15, 30, 45] },
-  { id: 5, name: '5 Minute Increments', minuteOptions: 'all' },
-  { id: 6, name: 'Real Life Scenarios', minuteOptions: 'all' },
+  { id: 5, name: 'infinite', minuteOptions: [0, 15, 30, 45] },
+  { id: 6, name: 'infinite', minuteOptions: [0, 15, 30, 45] },
 ];
 
 function angleForTime(hours: number, minutes: number) {
@@ -72,6 +72,9 @@ export default function ClockTimeGame() {
   const [hintVisible, setHintVisible] = useState(false);
   const managerRef = useRef(new GameFlowManager()).current;
   const minutePan = useRef({ dragging: false }).current;
+  // --- Clock Hand Control ---
+  const [activeHand, setActiveHand] = useState<'hour' | 'minute'>('hour'); // default to hour hand
+
 
   useEffect(() => {
     randomizeTarget();
@@ -189,29 +192,29 @@ export default function ClockTimeGame() {
     managerRef.recordAttempt(checkAnswer());
   };
 
-  const hourResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const angle = polarToAngle(gesture.moveX - 24, gesture.moveY - 150);
-        let hourFloat = ((angle / 360) * 12) % 12;
-        let hour = Math.round(hourFloat);
-        if (hour === 0) hour = 12;
-        setUserTime(prev => ({ ...prev, hours: hour }));
-      },
-    })
-  ).current;
+  // const hourResponder = useRef(
+  //   PanResponder.create({
+  //     onStartShouldSetPanResponder: () => true,
+  //     onPanResponderMove: (_, gesture) => {
+  //       const angle = polarToAngle(gesture.moveX - 24, gesture.moveY - 150);
+  //       let hourFloat = ((angle / 360) * 12) % 12;
+  //       let hour = Math.round(hourFloat);
+  //       if (hour === 0) hour = 12;
+  //       setUserTime(prev => ({ ...prev, hours: hour }));
+  //     },
+  //   })
+  // ).current;
 
-  const minuteResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const angle = polarToAngle(gesture.moveX - 24, gesture.moveY - 150);
-        let minute = Math.round((angle / 360) * 60) % 60;
-        setUserTime(prev => ({ ...prev, minutes: minute }));
-      },
-    })
-  ).current;
+  // const minuteResponder = useRef(
+  //   PanResponder.create({
+  //     onStartShouldSetPanResponder: () => true,
+  //     onPanResponderMove: (_, gesture) => {
+  //       const angle = polarToAngle(gesture.moveX - 24, gesture.moveY - 150);
+  //       let minute = Math.round((angle / 360) * 60) % 60;
+  //       setUserTime(prev => ({ ...prev, minutes: minute }));
+  //     },
+  //   })
+  // ).current;
 
   const hourRotate = hourAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
   const minuteRotate = minuteAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
@@ -228,10 +231,51 @@ export default function ClockTimeGame() {
       <Text style={styles.levelText}>Level {levelSpec.id}: {levelSpec.name}</Text>
 
       <Text style={styles.question}>Set the clock to {target.hours}:{target.minutes.toString().padStart(2, '0')}</Text>
+
       <Text style={styles.userTime}>You set: {userTime.hours}:{userTime.minutes.toString().padStart(2, '0')}</Text>
 
+      <View style={styles.toggleRow}>
+        <TouchableOpacity onPress={() => setActiveHand('hour')}>
+          <Text style={[styles.toggleText, activeHand === 'hour' && styles.activeToggle]}>HOUR</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveHand('minute')}>
+          <Text style={[styles.toggleText, activeHand === 'minute' && styles.activeToggle]}>MINUTE</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.clockWrap}>
-        <Image source={ASSETS.clockFace} style={styles.clockFace} />
+
+        {/* <Image source={ASSETS.clockFace} style={styles.clockFace} /> */}
+        {/* --- New Clickable Clock Face --- */}
+        <View style={styles.clockFace}>
+          {[...Array(12)].map((_, i) => {
+            const angle = (i + 1) * 30;
+            const radius = CLOCK_SIZE * 0.42;
+            const x = CENTER + radius * Math.sin((angle * Math.PI) / 180);
+            const y = CENTER - radius * Math.cos((angle * Math.PI) / 180);
+
+            return (
+              <TouchableOpacity
+                key={i}
+                style={[
+                  styles.clockNumber,
+                  { left: x - 15, top: y - 15 },
+                ]}
+                onPress={() => {
+                  if (activeHand === 'hour') {
+                    setUserTime(prev => ({ ...prev, hours: i + 1 }));
+                  } else {
+                    setUserTime(prev => ({ ...prev, minutes: (i + 1) * 5 % 60 }));
+                  }
+                }}
+              >
+                <Text style={styles.clockNumberText}>{i + 1}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        
         {hintVisible && (
           <>
             {/* Glow for minute hand tip */}
@@ -261,12 +305,11 @@ export default function ClockTimeGame() {
         
         <Animated.View
           style={[styles.hand, styles.minuteHand, { transform: [{ rotate: minuteRotate }] }]}
-          {...minuteResponder.panHandlers}
         />
         <Animated.View
           style={[styles.hand, styles.hourHand, { transform: [{ rotate: hourRotate }] }]}
-          {...hourResponder.panHandlers}
         />
+
       </View>
 
       <View style={styles.buttonRow}>
@@ -293,12 +336,12 @@ export default function ClockTimeGame() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center' },
   question: {
-    fontSize: 22,
+    fontSize: 18,
     color: 'darkblue',
     lineHeight: 40,
     fontFamily: 'PixelFont',
     textAlign: 'center',
-    marginTop: 150,
+    marginTop: 120,
   },
   clockWrap: { width: CLOCK_SIZE, height: CLOCK_SIZE, justifyContent: 'center', alignItems: 'center' },
   clockFace: { width: CLOCK_SIZE, height: CLOCK_SIZE, position: 'absolute' },
@@ -336,6 +379,37 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 0, 0.6)',
     zIndex: 10,
-  }
+  },
+  toggleRow: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginVertical: 10,
+  },
+  toggleText: {
+    fontSize: 18,
+    color: 'darkblue',
+    fontFamily: 'PixelFont',
+    marginHorizontal: 16,
+  },
+  activeToggle: {
+    color: '#FFD700',
+    textDecorationLine: 'underline',
+  },
+  clockNumber: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  clockNumberText: {
+    color: 'darkblue',
+    fontFamily: 'PixelFont',
+    fontSize: 13,
+  },
+
 
 });
