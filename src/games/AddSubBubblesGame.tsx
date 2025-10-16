@@ -3,23 +3,23 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions, 
 import { Image as ExpoImage } from 'expo-image';
 import { GameFlowManager } from '../utils/GameFlowManager';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const ASSETS = {
   background: require('../../assets/addsub/addsub_bg1.png'),
 
   bubble: require('../../assets/bubbleCount/icons8-bubble-100.png'),
   bubbles: [
-    require('../../assets/addsub/UI_bubbles/1.png'),  // for 0
-    require('../../assets/addsub/UI_bubbles/2.png'), // 1
-    require('../../assets/addsub/UI_bubbles/3.png'),  // 2
-    require('../../assets/addsub/UI_bubbles/4.png'), // 3
-    require('../../assets/addsub/UI_bubbles/5.png'), // 4
-    require('../../assets/addsub/UI_bubbles/6.png'), // 5
-    require('../../assets/addsub/UI_bubbles/7.png'),  // 6
-    require('../../assets/addsub/UI_bubbles/8.png'), // 7
-    require('../../assets/addsub/UI_bubbles/9.png'), // 8
-    require('../../assets/addsub/UI_bubbles/10.png'), // 9
+    require('../../assets/addsub/UI_bubbles/1.png'), // 0
+    require('../../assets/addsub/UI_bubbles/2.png'),
+    require('../../assets/addsub/UI_bubbles/3.png'),
+    require('../../assets/addsub/UI_bubbles/4.png'),
+    require('../../assets/addsub/UI_bubbles/5.png'),
+    require('../../assets/addsub/UI_bubbles/6.png'),
+    require('../../assets/addsub/UI_bubbles/7.png'),
+    require('../../assets/addsub/UI_bubbles/8.png'),
+    require('../../assets/addsub/UI_bubbles/9.png'),
+    require('../../assets/addsub/UI_bubbles/10.png'),
   ],
   reset: require('../../assets/icons/icon_reset.png'),
   hint: require('../../assets/ui/hint2.png'),
@@ -31,105 +31,36 @@ const ASSETS = {
 
 export default function AddSubBubblesGame() {
   const [currentProblem, setCurrentProblem] = useState({ num1: 0, num2: 0, operator: '+', answer: 0 });
-  const [availableBubbles, setAvailableBubbles] = useState<{ id: number, value: number, x: number, y: number }[]>([]);
-  const [trayBubbles, setTrayBubbles] = useState<{ id: number, value: number }[]>([]);
+  const [trayBubbles, setTrayBubbles] = useState<{ id: number; value: number }[]>([]);
   const [showCelebrate, setShowCelebrate] = useState(false);
   const [showIncorrect, setShowIncorrect] = useState(false);
-
   const managerRef = useRef(new GameFlowManager()).current;
   const celebrateAnim = useRef(new Animated.Value(0)).current;
   const incorrectAnim = useRef(new Animated.Value(0)).current;
   const resultBubbleAnim = useRef(new Animated.Value(1)).current;
-  const [availableLayout, setAvailableLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [trayLayout, setTrayLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [flyingBubble, setFlyingBubble] = useState<{
-    visible: boolean;
-    value: number;
-    animX: Animated.Value;
-    animY: Animated.Value;
-  } | null>(null);
+  const [level, setLevel] = useState(1);
+  const totalLevels = 10;
 
   useEffect(() => {
     startNewProblem();
   }, []);
 
   function startNewProblem() {
-    // Ensure subtraction stays non-negative and numbers stay small
-    const operator = Math.random() > 0.5 ? '+' : '-';
+    const operator = level <= totalLevels / 2 ? '+' : '-';
+    setLevel(prev => (prev % totalLevels) + 1);
     let num1 = Math.floor(Math.random() * 9) + 1;
     let num2 = Math.floor(Math.random() * 9) + 1;
-    if (operator === '-' && num2 > num1) {
-      [num1, num2] = [num2, num1];
-    }
+    if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1];
     const answer = operator === '+' ? num1 + num2 : num1 - num2;
 
     setCurrentProblem({ num1, num2, operator, answer });
     setTrayBubbles([]);
     managerRef.resetLevel();
-
-    // Create available bubbles with various numbers
-    let bubbleValues: number[];
-    if (operator === '+') {
-      // For addition: use numbers 1-10
-      bubbleValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    } else {
-      // For subtraction: include the answer and numbers that can help reach it
-      bubbleValues = [answer, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-      // Also include num1 and num2 to help with understanding
-      if (!bubbleValues.includes(num1)) bubbleValues.push(num1);
-      if (!bubbleValues.includes(num2)) bubbleValues.push(num2);
-    }
-    
-    const shuffledValues = bubbleValues.sort(() => Math.random() - 0.5);
-    const columns = Platform.OS === 'web' ? 5 : 4; // Fewer columns on mobile
-    const cellWidth = width / columns;
-    const cellHeight = Platform.OS === 'web' ? 80 : 70; // Smaller height on mobile
-    
-    const newBubbles = shuffledValues.slice(0, 8).map((value, index) => ({
-      id: index,
-      value,
-      x: (index % columns) * cellWidth + (cellWidth - 50) / 2,
-      y: Math.floor(index / columns) * cellHeight,
-    }));
-    
-    setAvailableBubbles(newBubbles);
   }
 
-  function addBubbleToTray(bubbleId: number) {
-    const bubble = availableBubbles.find(b => b.id === bubbleId);
-    if (!bubble) return;
-
-    // If we have layout info, animate a flying bubble to the tray
-    if (availableLayout && trayLayout) {
-      const startX = availableLayout.x + bubble.x;
-      const startY = availableLayout.y + bubble.y;
-      const endX = trayLayout.x + trayLayout.width / 2 - 25;
-      const endY = trayLayout.y + 20; // near top of tray container
-
-      const animX = new Animated.Value(startX);
-      const animY = new Animated.Value(startY);
-      setFlyingBubble({ visible: true, value: bubble.value, animX, animY });
-
-      // Hide from available while flying
-      setAvailableBubbles(prev => prev.filter(b => b.id !== bubbleId));
-
-      Animated.parallel([
-        Animated.timing(animX, { toValue: endX, duration: 400, useNativeDriver: false }),
-        Animated.timing(animY, { toValue: endY, duration: 400, useNativeDriver: false }),
-      ]).start(() => {
-        setFlyingBubble(null);
-        setTrayBubbles(prev => [...prev, { id: bubble.id, value: bubble.value }]);
-        Animated.sequence([
-          Animated.timing(resultBubbleAnim, { toValue: 1.2, duration: 200, useNativeDriver: true }),
-          Animated.timing(resultBubbleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        ]).start();
-      });
-      return;
-    }
-
-    // Fallback without layout info
-    setTrayBubbles(prev => [...prev, { id: bubble.id, value: bubble.value }]);
-    setAvailableBubbles(prev => prev.filter(b => b.id !== bubbleId));
+  function addBubbleToTray(value: number) {
+    const id = Date.now();
+    setTrayBubbles(prev => [...prev, { id, value }]);
     Animated.sequence([
       Animated.timing(resultBubbleAnim, { toValue: 1.2, duration: 200, useNativeDriver: true }),
       Animated.timing(resultBubbleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -137,63 +68,14 @@ export default function AddSubBubblesGame() {
   }
 
   function removeBubbleFromTray(bubbleId: number) {
-    const bubble = trayBubbles.find(b => b.id === bubbleId);
-    if (!bubble) return;
-
     setTrayBubbles(prev => prev.filter(b => b.id !== bubbleId));
-    
-    // Add back to available bubbles with a new position
-    const columns = Platform.OS === 'web' ? 5 : 4;
-    const cellWidth = width / columns;
-    const cellHeight = Platform.OS === 'web' ? 80 : 70;
-    
-    // Find an empty spot in the grid
-    const existingPositions = availableBubbles.map(b => ({ x: b.x, y: b.y }));
-    let newX: number, newY: number;
-    let attempts = 0;
-    
-    do {
-      const col = Math.floor(Math.random() * columns);
-      const row = Math.floor(Math.random() * 2); // Only 2 rows
-      newX = col * cellWidth + (cellWidth - 50) / 2;
-      newY = row * cellHeight;
-      attempts++;
-    } while (
-      attempts < 20 && 
-      existingPositions.some(pos => 
-        Math.abs(pos.x - newX) < 60 && Math.abs(pos.y - newY) < 60
-      )
-    );
-    
-    setAvailableBubbles(prev => [...prev, { 
-      id: bubble.id, 
-      value: bubble.value, 
-      x: newX,
-      y: newY
-    }]);
   }
 
   function checkAnswer() {
     const traySum = trayBubbles.reduce((sum, bubble) => sum + bubble.value, 0);
-    let correct = false;
-    
-    if (currentProblem.operator === '+') {
-      // For addition: sum should equal the answer
-      correct = traySum === currentProblem.answer;
-    } else {
-      // For subtraction: we need to handle this differently
-      // Option 1: Find the missing number (what needs to be subtracted from num1 to get num2)
-      // Option 2: Use the answer directly
-      correct = traySum === currentProblem.answer;
-    }
-    
+    const correct = traySum === currentProblem.answer;
     managerRef.recordAttempt(correct);
-
-    if (correct) {
-      triggerCelebrate();
-    } else {
-      triggerIncorrect();
-    }
+    correct ? triggerCelebrate() : triggerIncorrect();
   }
 
   function triggerCelebrate() {
@@ -219,126 +101,102 @@ export default function AddSubBubblesGame() {
     });
   }
 
+    // -------------------------
+  // Hint and Solution helpers
+  // -------------------------
   function showHint() {
+    // ask manager to advance hint level (keeps original behavior)
     managerRef.updateHints();
     if (managerRef.hintLevel === 0) return;
 
-    // Highlight the correct bubbles
-    const correctBubbles = availableBubbles.filter(b => b.value <= currentProblem.answer);
-    if (managerRef.hintLevel >= 1) {
-      // Could add visual hints here
+    // Try to provide a small helpful hint: add first usable bubble toward the answer
+    const answer = currentProblem.answer;
+    // Candidate pool: 0..10
+    const candidates = Array.from({ length: 11 }, (_, i) => i)
+      // sort to prefer larger helpful numbers (optional)
+      .sort((a, b) => b - a);
+
+    // Find a number <= answer that helps reduce remaining sum
+    let chosen: number | null = null;
+    for (const c of candidates) {
+      if (c > 0 && c <= answer) { chosen = c; break; }
     }
+    // If nothing found (e.g., answer is 0), pick 0
+    if (chosen === null) chosen = 0;
+
+    // Add a single bubble as a gentle hint
+    setTimeout(() => addBubbleToTray(chosen as number), 250);
   }
 
   function playSolutionAnimation() {
+    // mark solution hint state in manager
     managerRef.hintLevel = 3;
     managerRef.status = 'dependent';
 
-    if (currentProblem.operator === '+') {
-      // For addition: find bubbles that sum to the answer
-      const remainingBubbles = [...availableBubbles];
-      let currentSum = 0;
-      const bubblesToAdd = [];
+    // Build a greedy solution from available numbers 10..1..0
+    const target = currentProblem.answer;
+    if (target === 0) {
+      // If answer is zero, just add 0
+      setTimeout(() => addBubbleToTray(0), 300);
+      return;
+    }
 
-      for (const bubble of remainingBubbles) {
-        if (currentSum + bubble.value <= currentProblem.answer) {
-          bubblesToAdd.push(bubble);
-          currentSum += bubble.value;
-          if (currentSum === currentProblem.answer) break;
-        }
-      }
+    const pool = Array.from({ length: 10 }, (_, i) => i).sort((a,b) => b - a); // 10..0
+    let sum = 0;
+    const toAdd: number[] = [];
 
-      // Add bubbles to tray with delay
-      bubblesToAdd.forEach((bubble, index) => {
-        setTimeout(() => {
-          addBubbleToTray(bubble.id);
-        }, index * 300);
-      });
-    } else {
-      // For subtraction: find the answer bubble directly, or bubbles that sum to it
-      const answerBubble = availableBubbles.find(b => b.value === currentProblem.answer);
-      if (answerBubble) {
-        // If the answer bubble exists, use it
-        setTimeout(() => {
-          addBubbleToTray(answerBubble.id);
-        }, 300);
-      } else {
-        // Otherwise, find bubbles that sum to the answer
-        const remainingBubbles = [...availableBubbles];
-        let currentSum = 0;
-        const bubblesToAdd = [];
-
-        for (const bubble of remainingBubbles) {
-          if (currentSum + bubble.value <= currentProblem.answer) {
-            bubblesToAdd.push(bubble);
-            currentSum += bubble.value;
-            if (currentSum === currentProblem.answer) break;
-          }
-        }
-
-        bubblesToAdd.forEach((bubble, index) => {
-          setTimeout(() => {
-            addBubbleToTray(bubble.id);
-          }, index * 300);
-        });
+    for (const n of pool) {
+      if (sum + n <= target) {
+        toAdd.push(n);
+        sum += n;
+        if (sum === target) break;
       }
     }
+
+    // If greedy failed (very unlikely for 0..10 target), fallback to adding target itself if <=10
+    if (sum !== target && target <= 10) {
+      toAdd.length = 0;
+      toAdd.push(target);
+    }
+
+    // Animate adding those bubbles to the tray (non-destructive — they remain in tray)
+    toAdd.forEach((val, idx) => {
+      setTimeout(() => addBubbleToTray(val), idx * 300);
+    });
   }
+
 
   const traySum = trayBubbles.reduce((sum, bubble) => sum + bubble.value, 0);
   const resultBubbleSize = Math.max(60, 40 + traySum * 3);
 
   return (
     <View style={styles.container}>
-      {/* <Image source={ASSETS.background} style={StyleSheet.absoluteFillObject} resizeMode="cover" /> */}
-
-      <Image 
-              source={ASSETS.background} 
-              style={[
-                StyleSheet.absoluteFillObject,
-                { width: '100%', height: '100%', resizeMode: 'stretch' }
-              ]} 
-            />
+      <Image source={ASSETS.background} style={[StyleSheet.absoluteFillObject, {width:'100%',height:'100%', resizeMode:'stretch' }]} />
 
       {/* Problem Display */}
       <View style={styles.problemContainer}>
         <Text style={styles.problemText}>
           {currentProblem.num1} {currentProblem.operator} {currentProblem.num2} = ?
         </Text>
-        {/* <Text style={styles.instructionText}>
-          {currentProblem.operator === '+' 
-            ? 'Add bubbles to match the answer' 
-            : 'Find the answer bubble or add bubbles that equal the answer'
-          }
-        </Text> */}
       </View>
 
       {/* Bubble Tray */}
-      <View style={styles.trayContainer} onLayout={e => setTrayLayout(e.nativeEvent.layout)}>
-        <Text style={styles.trayLabel}>Bubble Tray</Text>
+      <View style={styles.trayContainer}>
+        {/* <Text style={styles.trayLabel}>Bubble Tray</Text> */}
         <View style={styles.tray}>
           {trayBubbles.map(bubble => (
-            <TouchableOpacity
-              key={bubble.id}
-              style={styles.trayBubble}
-              onPress={() => removeBubbleFromTray(bubble.id)}
-            >
+            <TouchableOpacity key={bubble.id} style={styles.trayBubble} onPress={() => removeBubbleFromTray(bubble.id)}>
               <Image source={ASSETS.bubbles[bubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
               <Text style={styles.bubbleValue}>{bubble.value}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        
-        {/* Result Bubble */}
+        {/* Result tray */}
         <View style={styles.resultContainer}>
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.resultBubble, 
-              { 
-                width: resultBubbleSize, 
-                height: resultBubbleSize,
-                transform: [{ scale: resultBubbleAnim }]
-              }
+              styles.resultBubble,
+              { width: resultBubbleSize, height: resultBubbleSize, transform: [{ scale: resultBubbleAnim }] },
             ]}
           >
             <Image source={ASSETS.bubble} style={[styles.resultBubbleImage, { width: resultBubbleSize, height: resultBubbleSize }]} />
@@ -347,62 +205,57 @@ export default function AddSubBubblesGame() {
         </View>
       </View>
 
-      {/* Available Bubbles */}
+      {/* Calculator Layout */}
       <View style={styles.availableContainer}>
-        <Text style={styles.availableLabel}>Available Bubbles</Text>
-        <View style={styles.availableBubbles} onLayout={e => setAvailableLayout(e.nativeEvent.layout)}>
-          {availableBubbles.map(bubble => (
-            <TouchableOpacity
-              key={bubble.id}
-              style={[styles.availableBubble, { top: bubble.y, left: bubble.x }]}
-              onPress={() => addBubbleToTray(bubble.id)}
-              activeOpacity={0.7}
-            >
-              <Image source={ASSETS.bubbles[bubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
-              <Text style={styles.bubbleValue}>{bubble.value}</Text>
+        <View style={styles.calculatorGrid}>
+          {/* 1–9 grid */}
+          {Array.from({ length: 9 }, (_, i) => i + 1).map(num => (
+            <TouchableOpacity key={num} style={styles.calcButton} onPress={() => addBubbleToTray(num)}>
+              <Image source={ASSETS.bubbles[num % ASSETS.bubbles.length]} style={styles.bubbleImage} />
+              <Text style={styles.bubbleValue}>{num}</Text>
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Last row with centered 0 */}
+        <View style={styles.lastRow}>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity style={styles.calcButton} onPress={() => addBubbleToTray(0)}>
+            <Image source={ASSETS.bubbles[0]} style={styles.bubbleImage} />
+            <Text style={styles.bubbleValue}>0</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }} />
+        </View>
       </View>
 
-      {/* Buttons */}
+      {/* Control Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity onPress={startNewProblem}>
           <Image source={ASSETS.reset} style={styles.icon} />
         </TouchableOpacity>
+
+        {/* Hint button */}
         <TouchableOpacity onPress={showHint}>
           <Image source={ASSETS.hint} style={styles.icon} />
         </TouchableOpacity>
+
+        {/* Solution button */}
         <TouchableOpacity onPress={playSolutionAnimation}>
           <Image source={ASSETS.solution} style={styles.icon} />
         </TouchableOpacity>
+        
         <TouchableOpacity onPress={checkAnswer}>
           <Image source={ASSETS.submit} style={styles.icon} />
         </TouchableOpacity>
+
       </View>
 
-      {/* Flying bubble animation overlay */}
-      {flyingBubble?.visible && (
-        <Animated.View style={[styles.flyingBubble, { left: flyingBubble.animX, top: flyingBubble.animY }]}> 
-          {/* <Image source={ASSETS.bubble} style={styles.bubbleImage} /> */}
-          <Image source={ASSETS.bubbles[flyingBubble.value % ASSETS.bubbles.length]} style={styles.bubbleImage} />
-          <Text style={styles.bubbleValue}>{flyingBubble.value}</Text>
-        </Animated.View>
-      )}
-
-      {/* Celebrate Overlay */}
+      {/* Celebration & Incorrect Overlays */}
       {showCelebrate && (
         <Animated.View style={[styles.overlay, { transform: [{ scale: celebrateAnim }] }]}>
-          <ExpoImage
-            source={ASSETS.celebrate}
-            style={styles.overlayImage}
-            contentFit="contain"
-            autoplay
-          />
+          <ExpoImage source={ASSETS.celebrate} style={styles.overlayImage} contentFit="contain" autoplay />
         </Animated.View>
       )}
-
-      {/* Incorrect Overlay */}
       {showIncorrect && (
         <Animated.View style={[styles.overlay, { transform: [{ scale: incorrectAnim }] }]}>
           <Image source={ASSETS.incorrect} style={styles.overlayImage} />
@@ -414,104 +267,70 @@ export default function AddSubBubblesGame() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  problemContainer: {
-    alignItems: 'center',
-    marginTop: Platform.OS === 'web' ? 400 : 200,
-    marginBottom: 20,
-    color: 'darkblue',
-  },
+  problemContainer: { alignItems: 'center', marginTop:200 },
   problemText: {
     fontSize: 24,
     color: '#fb8943ff',
     fontFamily: 'PixelFont',
-    textAlign: 'center',
-    marginBottom: 10,
   },
-  // instructionText: {
-  //   fontSize: 16,
-  //   color: '#fff',
-  //   fontFamily: 'PixelFont',
-  //   textAlign: 'center',
-  //   marginBottom: 20,
-  // },
   trayContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'web' ? 100 : 80,
-    left: 20,
-    right: 20,
+    margin: 10,
+    marginHorizontal: 20,
     backgroundColor: 'rgba(214, 214, 214, 0.2)',
     borderRadius: 15,
     padding: 15,
     borderWidth: 2,
-    marginTop: 160,
     borderColor: '#1f0086ff',
   },
   trayLabel: {
-    fontSize: 18,
+    fontSize: 14,
     color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
     marginBottom: 10,
   },
-  tray: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    minHeight: 40,
-    marginTop: -10,
-  },
-  trayBubble: {
-    position: 'relative',
-    margin: 5,
-  },
-  resultContainer: {
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  resultBubble: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resultBubbleImage: {
-    position: 'absolute',
-  },
+  tray: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  trayBubble: { margin: 5 },
+  resultContainer: { alignItems: 'center' },
+  resultBubble: { alignItems: 'center', justifyContent: 'center' },
+  resultBubbleImage: { position: 'absolute' },
   resultText: {
-    fontSize: 20,
+    fontSize: 15,
     color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
   },
   availableContainer: {
-    position: 'absolute',
-    bottom: Platform.OS === 'web' ? 20 : 180,
+    position: 'relative',
+    bottom: 100,
     left: 0,
     right: 0,
     backgroundColor: 'rgba(249, 249, 249, 0.3)',
-    paddingVertical: 5,
+    paddingVertical: 20,
+    marginTop:50,
   },
-  availableLabel: {
-    fontSize: 18,
-    color: '#1f0086ff',
-    fontFamily: 'PixelFont',
-    textAlign: 'center',
-    marginBottom: 10,
+  calculatorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginHorizontal: 50,
   },
-  availableBubbles: {
-    position: 'relative',
-    height: Platform.OS === 'web' ? 160 : 140,
-    paddingHorizontal: 10,
+  calcButton: {
+    width: 80,
+    height: 80,
+    margin: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  availableBubble: {
-    position: 'absolute',
-    zIndex: 10,
+  lastRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 5,
   },
-  bubbleImage: {
-    width: 50,
-    height: 50,
-  },
+  bubbleImage: { width: 60, height: 60 },
   bubbleValue: {
-    fontSize: 18,
+    fontSize: 15,
     color: '#1f0086ff',
     fontFamily: 'PixelFont',
     textAlign: 'center',
@@ -519,31 +338,14 @@ const styles = StyleSheet.create({
   buttonRow: {
     position: 'absolute',
     bottom: 0,
-    padding:9,
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: 'rgba(133, 172, 239, 0.8)',
     justifyContent: 'space-evenly',
+    backgroundColor: 'rgba(133, 172, 239, 0.8)',
+    padding: 8,
   },
-  icon: {
-    width: 50,
-    height: 50,
-  }, 
-  overlay: {
-    position: 'absolute',
-    top: '40%',
-    left: '35%',
-    zIndex: 10,
-  },
-  overlayImage: {
-    width: 150,
-    height: 150,
-    resizeMode: 'contain',
-  },
-  flyingBubble: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    zIndex: 100,
-  },
+  icon: { width: 50, height: 50 },
+  overlay: { position: 'absolute', top: '40%', left: '35%', zIndex: 10 },
+  overlayImage: { width: 150, height: 150, resizeMode: 'contain' },
 });
+
